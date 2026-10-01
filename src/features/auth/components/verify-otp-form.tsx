@@ -230,7 +230,7 @@ Enter the 4-digit OTP code received at your administrator email          </p>
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@dejumblify.com"
+                placeholder="Enter Email"
                 required
                 disabled
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
