@@ -1,7 +1,7 @@
 "use client";
 
 import { Server, Globe, Cpu, Shield, Activity } from "lucide-react";
-import { API_BASE_URL, SOCKET_URL } from "@/utils/constants";
+import { API_BASE_URL } from "@/utils/constants";
 
 export default function SystemInfoCard() {
   return (
@@ -40,9 +40,7 @@ export default function SystemInfoCard() {
             <Activity className="h-3 w-3 text-slate-500" />
             <span>Socket Transport</span>
           </span>
-          <div className="font-mono text-xs text-slate-900 font-semibold truncate" title={SOCKET_URL}>
-            {SOCKET_URL}
-          </div>
+        
           <p className="text-[11px] text-slate-500">Real-time chat & telemetry</p>
         </div>
 
