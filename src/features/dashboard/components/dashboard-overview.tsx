@@ -134,7 +134,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* AI Telemetry */}
-      <AIUsageCard data={aiUsage} />
+      {/* <AIUsageCard data={aiUsage} /> */}
 
       {/* Visual Growth Graphs */}
       <GrowthChartCard userStats={userStats} revenue={revenue} />

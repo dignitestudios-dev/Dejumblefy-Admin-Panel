@@ -201,7 +201,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
               </div>
 
               {/* AI Usage Breakdown */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              {/* <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <Cpu className="h-4 w-4 text-[#000072]" />
                   <h4 className="font-bold text-slate-900 text-xs">AI Chat & Declutter Activity</h4>
@@ -209,7 +209,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-xs">
                     <div className="text-base font-bold text-slate-900">
-                      {user.aiUsage?.chatsCount ?? 0}
+                      {user.aiUsage?.totalChats ?? 0}
                     </div>
                     <div className="text-[10px] text-slate-500">Chats Created</div>
                   </div>
@@ -226,7 +226,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                     <div className="text-[10px] text-slate-500">AI Images</div>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </>
           ) : activeTab === "ledger" ? (
             /* Ledger Tab */

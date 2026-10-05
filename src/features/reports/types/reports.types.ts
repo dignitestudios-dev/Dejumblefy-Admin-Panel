@@ -53,22 +53,78 @@ export interface AIReportData {
   }>;
 }
 
+export interface RevenueByPackageItem {
+  packageId?: string;
+  packageName?: string;
+  name?: string;
+  tokens?: number;
+  count?: number;
+  purchases?: number;
+  revenue?: number;
+  totalRevenue?: number;
+}
+
+export interface RevenueGrowthItem {
+  date?: string;
+  period?: string;
+  revenue?: number;
+  purchases?: number;
+}
+
 export interface RevenueReportData {
   totalRevenue: number;
-  transactionsCount: number;
-  averageOrderValue: number;
+  netRevenue?: number;
+  monthlyRevenue?: number;
+  yearlyRevenue?: number;
+  tokenPurchaseRevenue?: number;
+  tokenPurchases?: number;
+  tokensSold?: number;
+  refundedPurchases?: number;
+  refundedRevenue?: number;
+  revenueByPackage?: RevenueByPackageItem[];
+  growth?: RevenueGrowthItem[];
+  transactionsCount?: number;
+  averageOrderValue?: number;
   revenueTimeSeries?: Array<{ date: string; revenue: number }>;
+}
+
+export interface ClickProductItem {
+  clicks: number;
+  productId: string;
+  title: string;
+  asin: string;
+  uniqueUsers?: number;
+  imageUrl?: string | null;
+  defaultLink?: string;
+  _id?: string;
+  clickCount?: number;
+}
+
+export interface ClickCategoryItem {
+  category: string;
+  clicks: number;
+}
+
+export interface ClickOverTimeItem {
+  date: string;
+  clicks: number;
 }
 
 export interface ClicksReportData {
   totalClicks: number;
+  byProduct?: ClickProductItem[];
+  byCategory?: ClickCategoryItem[];
+  overTime?: ClickOverTimeItem[];
   topProducts?: Array<{
-    _id: string;
+    _id?: string;
+    productId?: string;
     asin: string;
     title: string;
-    clickCount: number;
-    defaultLink: string;
+    clickCount?: number;
+    clicks?: number;
+    defaultLink?: string;
     imageUrl?: string | null;
+    uniqueUsers?: number;
   }>;
 }
 

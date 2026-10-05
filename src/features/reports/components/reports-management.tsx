@@ -95,13 +95,13 @@ export default function ReportsManagement() {
           <TokensAnalyticsCard data={data.tokens} />
 
           {/* AI Usage & Workload */}
-          <AIUsageCard data={data.ai} />
+          {/* <AIUsageCard data={data.ai} /> */}
 
           {/* User Demographics & Signups */}
           <UsersAnalyticsCard data={data.users} />
 
           {/* Affiliate Outbound Clicks */}
-          <AffiliateClicksCard data={data.clicks} />
+          {/* <AffiliateClicksCard data={data.clicks} /> */}
         </div>
       ) : null}
     </div>
