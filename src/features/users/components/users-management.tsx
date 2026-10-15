@@ -6,9 +6,6 @@ import { useUsersQuery } from "../api/users.queries";
 import { AdminUserListItem, UsersQueryParams } from "../types/users.types";
 import UsersFilterBar from "./users-filter-bar";
 import UsersTable from "./users-table";
-import AdjustTokensModal from "./adjust-tokens-modal";
-import EditUserModal from "./edit-user-modal";
-import DeleteUserModal from "./delete-user-modal";
 import UserDetailModal from "./user-detail-modal";
 
 export default function UsersManagement() {
@@ -22,9 +19,6 @@ export default function UsersManagement() {
   });
 
   const [inspectUser, setInspectUser] = useState<AdminUserListItem | null>(null);
-  const [adjustUser, setAdjustUser] = useState<AdminUserListItem | null>(null);
-  const [editUser, setEditUser] = useState<AdminUserListItem | null>(null);
-  const [deleteUser, setDeleteUser] = useState<AdminUserListItem | null>(null);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useUsersQuery(filters);
 
@@ -44,7 +38,7 @@ export default function UsersManagement() {
             User Accounts & Token Balances
           </h2>
           <p className="mt-1 text-xs text-slate-500">
-            Inspect customer wallets, manual token adjustments, referral chains, and ban statuses.
+            Inspect customer wallets, referral chains, and ban statuses.
           </p>
         </div>
 
@@ -87,30 +81,13 @@ export default function UsersManagement() {
         pagination={pagination}
         onPageChange={(page) => handleFilterChange({ page })}
         onInspect={(u) => setInspectUser(u)}
-        onAdjustTokens={(u) => setAdjustUser(u)}
-        onEdit={(u) => setEditUser(u)}
-        onDelete={(u) => setDeleteUser(u)}
       />
 
-      {/* Modals */}
+      {/* User Detail Modal */}
       <UserDetailModal
         userId={inspectUser?._id || null}
         isOpen={!!inspectUser}
         onClose={() => setInspectUser(null)}
-      />
-
-      <AdjustTokensModal
-        user={adjustUser}
-        isOpen={!!adjustUser}
-        onClose={() => setAdjustUser(null)}
-      />
-
-      <EditUserModal user={editUser} isOpen={!!editUser} onClose={() => setEditUser(null)} />
-
-      <DeleteUserModal
-        user={deleteUser}
-        isOpen={!!deleteUser}
-        onClose={() => setDeleteUser(null)}
       />
     </div>
   );

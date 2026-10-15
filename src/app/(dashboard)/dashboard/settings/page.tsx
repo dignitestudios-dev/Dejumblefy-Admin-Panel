@@ -1,7 +1,7 @@
 import SettingsManagement from "@/features/settings/components/settings-management";
 
 export const metadata = {
-  title: "Admin Settings | Dejumblify Admin Panel",
+  title: "Admin Settings | Dejumblefy Admin Panel",
   description: "Configure system broadcast preferences, master credentials, and system settings.",
 };
 

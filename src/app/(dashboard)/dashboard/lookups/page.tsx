@@ -1,7 +1,7 @@
 import LookupsManagement from "@/features/lookups/components/lookups-management";
 
 export const metadata = {
-  title: "Lookups Management | Dejumblify Admin Panel",
+  title: "Lookups Management | Dejumblefy Admin Panel",
   description: "Configure room categories, design styles, and materials for AI generation.",
 };
 

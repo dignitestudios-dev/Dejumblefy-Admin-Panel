@@ -94,8 +94,16 @@ export default function ReportsFilterBar({
             <button
               type="button"
               onClick={handleExport}
-              disabled={isExporting}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#FB7C20] text-white hover:bg-[#E86B12] px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 shadow-2xs"
+              disabled={
+                isExporting ||
+                (filters.period === "custom" && (!filters.startDate || !filters.endDate))
+              }
+              title={
+                filters.period === "custom" && (!filters.startDate || !filters.endDate)
+                  ? "Select both start and end date to export"
+                  : "Export CSV Report"
+              }
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#FB7C20] text-white hover:bg-[#E86B12] px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 shadow-2xs cursor-pointer disabled:cursor-not-allowed"
             >
               {isExporting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -116,6 +124,7 @@ export default function ReportsFilterBar({
             <input
               type="date"
               value={filters.startDate || ""}
+              max={filters.endDate || undefined}
               onChange={(e) => onFilterChange({ startDate: e.target.value })}
               className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
             />
@@ -125,10 +134,16 @@ export default function ReportsFilterBar({
             <input
               type="date"
               value={filters.endDate || ""}
+              min={filters.startDate || undefined}
               onChange={(e) => onFilterChange({ endDate: e.target.value })}
               className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
             />
           </div>
+          {(!filters.startDate || !filters.endDate) && (
+            <span className="text-[11px] text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              Select both start and end dates to apply custom range
+            </span>
+          )}
         </div>
       )}
     </div>

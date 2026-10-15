@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, RefreshCw, ArrowUpDown, Calendar, X } from "lucide-react";
+import { Search, RefreshCw, ArrowUpDown, Calendar, X, SlidersHorizontal, Coins } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { UsersQueryParams } from "../types/users.types";
 
@@ -11,6 +11,13 @@ interface UsersFilterBarProps {
   onRefresh: () => void;
   isFetching?: boolean;
 }
+
+const STATUS_OPTIONS: Array<{ label: string; value: NonNullable<UsersQueryParams["status"]> }> = [
+  { label: "All", value: "all" },
+  { label: "Active", value: "active" },
+  { label: "Pending", value: "pending" },
+  { label: "Suspended", value: "suspended" },
+];
 
 export default function UsersFilterBar({
   filters,
@@ -29,8 +36,35 @@ export default function UsersFilterBar({
   }, [debouncedSearch]);
 
   const [showAdvanced, setShowAdvanced] = useState(
-    Boolean(filters.referred !== undefined || filters.startDate || filters.endDate)
+    Boolean(
+      filters.referred !== undefined ||
+        filters.startDate ||
+        filters.endDate ||
+        filters.minTokenBalance !== undefined ||
+        filters.maxTokenBalance !== undefined
+    )
   );
+
+  const [minTokens, setMinTokens] = useState<string>(
+    filters.minTokenBalance !== undefined ? String(filters.minTokenBalance) : ""
+  );
+  const [maxTokens, setMaxTokens] = useState<string>(
+    filters.maxTokenBalance !== undefined ? String(filters.maxTokenBalance) : ""
+  );
+
+  const handleMinTokensBlur = () => {
+    const parsed = minTokens.trim() ? Number(minTokens.trim()) : undefined;
+    if (parsed !== filters.minTokenBalance) {
+      onFilterChange({ minTokenBalance: isNaN(parsed as number) ? undefined : parsed, page: 1 });
+    }
+  };
+
+  const handleMaxTokensBlur = () => {
+    const parsed = maxTokens.trim() ? Number(maxTokens.trim()) : undefined;
+    if (parsed !== filters.maxTokenBalance) {
+      onFilterChange({ maxTokenBalance: isNaN(parsed as number) ? undefined : parsed, page: 1 });
+    }
+  };
 
   const handleReferredChange = (val: string) => {
     if (val === "all") {
@@ -45,14 +79,31 @@ export default function UsersFilterBar({
   const currentReferredVal =
     filters.referred === true ? "referred" : filters.referred === false ? "direct" : "all";
 
-  const clearDateFilters = () => {
-    onFilterChange({ startDate: undefined, endDate: undefined, page: 1 });
+  const clearAdvancedFilters = () => {
+    setMinTokens("");
+    setMaxTokens("");
+    onFilterChange({
+      startDate: undefined,
+      endDate: undefined,
+      minTokenBalance: undefined,
+      maxTokenBalance: undefined,
+      referred: undefined,
+      page: 1,
+    });
   };
+
+  const hasActiveAdvanced = Boolean(
+    filters.startDate ||
+      filters.endDate ||
+      filters.minTokenBalance !== undefined ||
+      filters.maxTokenBalance !== undefined ||
+      filters.referred !== undefined
+  );
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
       {/* Primary Row: Search and main controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Search Input */}
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -61,7 +112,7 @@ export default function UsersFilterBar({
             value={searchTerm}
             maxLength={100}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name or email address..."
+            placeholder="Search by name, email address, or referral code..."
             className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-9 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
           />
           {searchTerm && (
@@ -81,26 +132,30 @@ export default function UsersFilterBar({
 
         {/* Filter Dropdowns & Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Status Filter */}
+          {/* Status Filter Tabs */}
           <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {(["all", "active", "suspended"] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() =>
-                  onFilterChange({
-                    status: status,
-                    page: 1,
-                  })
-                }
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
-                  (filters.status || "all") === status
-                    ? "bg-[#000072] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {status}
-              </button>
-            ))}
+            {STATUS_OPTIONS.map((opt) => {
+              const isActive = (filters.status || "all") === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    onFilterChange({
+                      status: opt.value,
+                      page: 1,
+                    })
+                  }
+                  className={`rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
+                    isActive
+                      ? "bg-[#000072] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Referral Channel Filter */}
@@ -132,6 +187,7 @@ export default function UsersFilterBar({
 
           {/* Sort Order Button */}
           <button
+            type="button"
             onClick={() =>
               onFilterChange({
                 sortOrder: filters.sortOrder === "asc" ? "desc" : "asc",
@@ -145,22 +201,24 @@ export default function UsersFilterBar({
             <span className="uppercase">{filters.sortOrder || "desc"}</span>
           </button>
 
-          {/* Advanced Filter Toggle (Dates) */}
+          {/* Advanced Filter Toggle (Dates & Tokens) */}
           <button
+            type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            title="Toggle Date Filters"
+            title="Toggle Advanced Filters"
             className={`flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-colors ${
-              showAdvanced || filters.startDate || filters.endDate
+              showAdvanced || hasActiveAdvanced
                 ? "border-[#FB7C20]/40 bg-[#FB7C20]/10 text-[#FB7C20]"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            <Calendar className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Dates</span>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Filters</span>
           </button>
 
           {/* Refresh Button */}
           <button
+            type="button"
             onClick={onRefresh}
             disabled={isFetching}
             title="Refresh List"
@@ -171,13 +229,40 @@ export default function UsersFilterBar({
         </div>
       </div>
 
-      {/* Advanced Filter Row (Date Range) */}
+      {/* Advanced Filter Row (Token Balance Range & Date Range) */}
       {showAdvanced && (
-        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 text-xs">
-          <span className="text-slate-600 font-medium flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-[#000072]" /> Registration Date Range:
-          </span>
+        <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-slate-100 text-xs">
+          {/* Token Balance Range */}
           <div className="flex items-center gap-2">
+            <span className="text-slate-600 font-medium flex items-center gap-1">
+              <Coins className="h-3.5 w-3.5 text-[#FB7C20]" /> Tokens:
+            </span>
+            <input
+              type="number"
+              min="0"
+              placeholder="Min"
+              value={minTokens}
+              onChange={(e) => setMinTokens(e.target.value)}
+              onBlur={handleMinTokensBlur}
+              className="h-8 w-20 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
+            />
+            <span className="text-slate-400">-</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="Max"
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(e.target.value)}
+              onBlur={handleMaxTokensBlur}
+              className="h-8 w-20 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
+            />
+          </div>
+
+          {/* Registration Date Range */}
+          <div className="flex items-center gap-2">
+            <span className="text-slate-600 font-medium flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5 text-[#000072]" /> Joined:
+            </span>
             <label className="text-[11px] text-slate-500">From:</label>
             <input
               type="date"
@@ -185,8 +270,6 @@ export default function UsersFilterBar({
               onChange={(e) => onFilterChange({ startDate: e.target.value || undefined, page: 1 })}
               className="h-8 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
             />
-          </div>
-          <div className="flex items-center gap-2">
             <label className="text-[11px] text-slate-500">To:</label>
             <input
               type="date"
@@ -195,12 +278,14 @@ export default function UsersFilterBar({
               className="h-8 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
             />
           </div>
-          {(filters.startDate || filters.endDate) && (
+
+          {hasActiveAdvanced && (
             <button
-              onClick={clearDateFilters}
+              type="button"
+              onClick={clearAdvancedFilters}
               className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 ml-auto"
             >
-              <X className="h-3 w-3" /> Clear Dates
+              <X className="h-3 w-3" /> Reset Advanced Filters
             </button>
           )}
         </div>

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Lock, Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { resetPassword } from "@/features/auth/api/auth.api";
+import { formatErrorMessage } from "@/utils/error";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -17,6 +18,7 @@ function ResetPasswordContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -30,8 +32,12 @@ function ResetPasswordContent() {
       setErrorMsg("Reset token is missing. Please restart the password reset flow.");
       return;
     }
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long");
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters long");
+      return;
+    }
+    if (password.length > 64) {
+      setErrorMsg("Password cannot exceed 64 characters");
       return;
     }
     if (password !== confirmPassword) {
@@ -46,10 +52,10 @@ function ResetPasswordContent() {
       setTimeout(() => {
         router.push("/login");
       }, 2500);
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Failed to reset password. Token may have expired.";
-      setErrorMsg(msg);
+    } catch (err: unknown) {
+      setErrorMsg(
+        formatErrorMessage(err, "Failed to reset password. Token may have expired.")
+      );
     } finally {
       setIsLoading(false);
     }
@@ -60,19 +66,21 @@ function ResetPasswordContent() {
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
         {/* Header */}
         <div className="mb-6 text-center flex flex-col items-center">
-          <Image
-            src={logoImg}
-            alt="Dejumblify"
-            className="h-24 w-auto max-w-[240px] object-contain mb-4"
-            priority
-          />
+          <div className="relative mb-3 flex items-center justify-center">
+            <Image
+              src={logoImg}
+              alt="Dejumblefy"
+              className="h-28 sm:h-32 w-auto max-w-[280px] object-contain drop-shadow-sm"
+              priority
+            />
+          </div>
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB7C20]/10 text-[#FB7C20]">
             <Lock className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Set New Password
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1.5 text-sm font-medium text-slate-600">
             Create a secure new password for your administrator account
           </p>
         </div>
@@ -126,21 +134,23 @@ function ResetPasswordContent() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
-                  New Password
+                  New Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
+                    maxLength={64}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    placeholder="At least 8 characters"
                     required
                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-11 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -150,18 +160,27 @@ function ResetPasswordContent() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
-                  Confirm New Password
+                  Confirm New Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showConfirmPassword ? "text" : "password"}
+                    maxLength={64}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    placeholder="Repeat new password"
                     required
                     className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-11 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 

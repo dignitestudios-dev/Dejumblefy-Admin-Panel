@@ -35,7 +35,7 @@ export default function Header() {
       {/* Route Title & Breadcrumb */}
       <div>
         <h1 className="text-base font-bold text-slate-900 tracking-tight">{title}</h1>
-        <p className="text-xs text-slate-500">Dejumblify Administrator Portal</p>
+        <p className="text-xs text-slate-500">Dejumblefy Administrator Portal</p>
       </div>
 
       {/* Right Controls */}

@@ -3,8 +3,8 @@ import { Loader2 } from "lucide-react";
 import VerifyOtpForm from "@/features/auth/components/verify-otp-form";
 
 export const metadata = {
-  title: "Verify Security Code | Dejumblify Admin Panel",
-  description: "Enter your 6-digit administrator verification code",
+  title: "Verify Security Code | Dejumblefy Admin Panel",
+  description: "Enter your 4-digit administrator verification code",
 };
 
 export default function VerifyOtpPage() {

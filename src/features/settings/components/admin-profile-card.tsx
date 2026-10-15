@@ -41,7 +41,7 @@ export default function AdminProfileCard() {
           </div>
           <p className="text-xs text-slate-500 truncate flex items-center justify-center sm:justify-start gap-1">
             <Mail className="h-3 w-3 text-slate-400" />
-            <span>{user?.email || "admin@dejumblify.com"}</span>
+            <span>{user?.email || "admin@dejumblefy.com"}</span>
           </p>
         </div>
       </div>

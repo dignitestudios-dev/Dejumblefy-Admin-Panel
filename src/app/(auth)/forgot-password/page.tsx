@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Mail, ArrowLeft, Loader2, KeyRound, AlertCircle } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { forgotPassword } from "@/features/auth/api/auth.api";
+import { formatErrorMessage } from "@/utils/error";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -18,19 +19,18 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!email.trim()) {
+    const cleanEmail = email.replace(/\s+/g, "");
+    if (!cleanEmail) {
       setErrorMsg("Please enter your administrator email address");
       return;
     }
 
     setIsLoading(true);
     try {
-      await forgotPassword({ email: email.trim() });
-      router.push(`/verify-otp?email=${encodeURIComponent(email.trim())}`);
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || err?.message || "Failed to send reset code";
-      setErrorMsg(msg);
+      await forgotPassword({ email: cleanEmail });
+      router.push(`/verify-otp?email=${encodeURIComponent(cleanEmail)}`);
+    } catch (err: unknown) {
+      setErrorMsg(formatErrorMessage(err, "Failed to send reset code"));
     } finally {
       setIsLoading(false);
     }
@@ -42,19 +42,21 @@ export default function ForgotPasswordPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
           {/* Header */}
           <div className="mb-6 text-center flex flex-col items-center">
-            <Image
-              src={logoImg}
-              alt="Dejumblify"
-              className="h-24 w-auto max-w-[240px] object-contain mb-4"
-              priority
-            />
+            <div className="relative mb-3 flex items-center justify-center">
+              <Image
+                src={logoImg}
+                alt="Dejumblefy"
+                className="h-28 sm:h-32 w-auto max-w-[280px] object-contain drop-shadow-sm"
+                priority
+              />
+            </div>
             <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FB7C20]/10 text-[#FB7C20]">
               <KeyRound className="h-5 w-5" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Forgot Password
             </h1>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1.5 text-sm font-medium text-slate-600">
               Enter your email to receive a password recovery verification code
             </p>
           </div>
@@ -78,7 +80,7 @@ export default function ForgotPasswordPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.replace(/\s+/g, ""))}
                   placeholder="Enter Email"
                   required
                   className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"

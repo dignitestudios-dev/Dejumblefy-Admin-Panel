@@ -1,8 +1,8 @@
 import DashboardOverview from "@/features/dashboard/components/dashboard-overview";
 
 export const metadata = {
-  title: "Admin Dashboard | Dejumblify",
-  description: "Administrative Management and System Telemetry for Dejumblify",
+  title: "Admin Dashboard | Dejumblefy",
+  description: "Administrative Management and System Telemetry for Dejumblefy",
 };
 
 export default function DashboardPage() {

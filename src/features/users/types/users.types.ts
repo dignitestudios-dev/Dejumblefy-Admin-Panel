@@ -1,3 +1,16 @@
+export interface UserProfilePicture {
+  _id?: string;
+  location: string;
+  mimetype?: string;
+  size?: number;
+}
+
+export interface ReferredByUser {
+  _id: string;
+  name: string | null;
+  email: string;
+}
+
 export interface AdminUserListItem {
   _id: string;
   name: string | null;
@@ -5,19 +18,13 @@ export interface AdminUserListItem {
   role?: string;
   tokenBalance: number;
   isDeactivatedByAdmin: boolean;
-  status?: "active" | "suspended";
+  status?: "active" | "pending" | "suspended";
   isEmailVerified?: boolean;
   isProfileCompleted?: boolean;
   referralCode?: string | null;
   registeredAt?: string;
-  referredBy?: {
-    _id: string;
-    name: string | null;
-    email: string;
-  } | null;
-  profilePicture?: {
-    location: string;
-  } | null;
+  referredBy?: ReferredByUser | null;
+  profilePicture?: UserProfilePicture | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -46,6 +53,7 @@ export interface UserAIUsageSummary {
   chatsCount: number;
   messagesCount: number;
   imagesCount: number;
+  totalChats?: number;
 }
 
 export interface UserDetailData extends AdminUserListItem {
@@ -68,17 +76,14 @@ export interface UsersQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: "all" | "active" | "suspended";
-  isActive?: boolean;
-  isVerified?: boolean;
-  role?: string;
+  status?: "all" | "active" | "pending" | "suspended";
+  minTokenBalance?: number;
+  maxTokenBalance?: number;
+  sortBy?: "createdAt" | "tokenBalance" | "name";
+  sortOrder?: "asc" | "desc";
   referred?: boolean;
   startDate?: string;
   endDate?: string;
-  sortBy?: "createdAt" | "tokenBalance" | "name";
-  sortOrder?: "asc" | "desc";
-  minTokenBalance?: number;
-  maxTokenBalance?: number;
 }
 
 export type UserActivityType =
@@ -134,4 +139,3 @@ export interface LedgerItem {
   note?: string;
   createdAt: string;
 }
-

@@ -14,6 +14,7 @@ import {
 import { ProductItem } from "../types/products.types";
 import { useUpdateProductMutation, useAISuggestTagsMutation } from "../api/products.mutations";
 import { useLookupsQuery } from "@/features/lookups/api/lookups.queries";
+import { validateAmazonUrl, extractAsin, isDummyOrInvalidAsin } from "../utils/products.utils";
 
 interface EditProductModalProps {
   product: ProductItem | null;
@@ -35,6 +36,12 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
   const [priority, setPriority] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [touched, setTouched] = useState<{
+    title?: boolean;
+    categories?: boolean;
+  }>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Queries & Mutations
   const { data: categories = [] } = useLookupsQuery({ type: "category", isActive: true });
@@ -62,10 +69,22 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
       setPriority(product.priority ?? 0);
       setIsActive(product.isActive ?? true);
       setErrorMsg(null);
+      setTouched({});
+      setIsSubmitted(false);
     }
   }, [product]);
 
   if (!isOpen || !product) return null;
+
+  const titleError =
+    (touched.title || isSubmitted) && !title.trim()
+      ? "Product title is required."
+      : null;
+
+  const categoriesError =
+    (touched.categories || isSubmitted) && selectedCategories.length === 0
+      ? "At least one room category must be selected."
+      : null;
 
   const toggleItem = (list: string[], setList: (val: string[]) => void, item: string) => {
     if (list.includes(item)) {
@@ -88,6 +107,7 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
   };
 
   const handleAISuggest = async () => {
+    setTouched((prev) => ({ ...prev, title: true }));
     if (!title.trim()) {
       setErrorMsg("Please enter a product title before requesting AI suggestions.");
       return;
@@ -125,15 +145,27 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitted(true);
     setErrorMsg(null);
 
-    if (!title.trim()) {
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle) {
       setErrorMsg("Product title is required.");
       return;
     }
     if (selectedCategories.length === 0) {
       setErrorMsg("At least one room category must be selected.");
       return;
+    }
+
+    const trimmedUrl = amazonUrl.trim();
+    if (trimmedUrl) {
+      const urlCheck = validateAmazonUrl(trimmedUrl);
+      if (!urlCheck.isValid) {
+        setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
+        return;
+      }
     }
 
     try {
@@ -149,8 +181,8 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
       await updateMutation.mutateAsync({
         id: product._id,
         payload: {
-          amazonUrl: amazonUrl.trim() || undefined,
-          title: title.trim(),
+          amazonUrl: trimmedUrl || undefined,
+          title: trimmedTitle,
           categories: selectedCategories,
           styles: selectedStyles,
           materials: selectedMaterials,
@@ -172,6 +204,9 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
     }
   };
 
+  const detectedEditAsin = amazonUrl.trim() ? extractAsin(amazonUrl) : null;
+  const editAmazonValidation = amazonUrl.trim() ? validateAmazonUrl(amazonUrl) : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden max-h-[92vh] flex flex-col">
@@ -190,18 +225,18 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4 overflow-y-auto flex-1">
           {errorMsg && (
             <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
               <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-              <span>{errorMsg}</span>
+              <span className="break-all">{errorMsg}</span>
             </div>
           )}
 
@@ -215,7 +250,7 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
                 type="button"
                 onClick={handleAISuggest}
                 disabled={aiSuggestMutation.isPending || !title.trim()}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FB7C20] hover:text-[#E86B12] disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FB7C20] hover:text-[#E86B12] disabled:opacity-40 transition-colors cursor-pointer"
               >
                 {aiSuggestMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -231,9 +266,23 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
               maxLength={200}
               placeholder="e.g. 6-Piece Clear Plastic Drawer Organizer Bins"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors"
+              onBlur={() => setTouched((prev) => ({ ...prev, title: true }))}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors disabled:opacity-50 ${
+                titleError
+                  ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
+              }`}
             />
+            {titleError && (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{titleError}</span>
+              </p>
+            )}
           </div>
 
           {/* Amazon URL (Optional change) */}
@@ -245,9 +294,29 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
               type="url"
               placeholder={product.defaultLink}
               value={amazonUrl}
-              onChange={(e) => setAmazonUrl(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors font-mono"
+              onChange={(e) => {
+                setAmazonUrl(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors font-mono ${
+                amazonUrl.trim() && editAmazonValidation && !editAmazonValidation.isValid
+                  ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
+              }`}
             />
+            {amazonUrl.trim() && editAmazonValidation && !editAmazonValidation.isValid ? (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{editAmazonValidation.error}</span>
+              </p>
+            ) : detectedEditAsin && !isDummyOrInvalidAsin(detectedEditAsin) ? (
+              <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1.5 font-medium">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 font-mono text-[10px] font-bold text-emerald-800">
+                  ASIN: {detectedEditAsin}
+                </span>
+                <span className="text-slate-500 text-[11px]">Valid Amazon identifier format</span>
+              </p>
+            ) : null}
           </div>
 
           {/* Image URL & Preview */}
@@ -286,15 +355,25 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Room Categories <span className="text-rose-500">*</span>
             </label>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 rounded-xl border border-slate-200 bg-slate-50">
+            <div
+              className={`flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 rounded-xl border transition-colors ${
+                categoriesError
+                  ? "border-rose-300 bg-rose-50/30"
+                  : "border-slate-200 bg-slate-50"
+              }`}
+            >
               {categories.map((c) => {
                 const isSelected = selectedCategories.includes(c.slug);
                 return (
                   <button
                     type="button"
                     key={c._id}
-                    onClick={() => toggleItem(selectedCategories, setSelectedCategories, c.slug)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                    onClick={() => {
+                      toggleItem(selectedCategories, setSelectedCategories, c.slug);
+                      setTouched((prev) => ({ ...prev, categories: true }));
+                      if (errorMsg) setErrorMsg(null);
+                    }}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? "bg-[#000072] text-white shadow-xs"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -305,6 +384,12 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
                 );
               })}
             </div>
+            {categoriesError && (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{categoriesError}</span>
+              </p>
+            )}
           </div>
 
           {/* Styles */}
@@ -422,8 +507,8 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
             />
           </div>
 
-          {/* Dimensions & Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          {/* Dimensions */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Length (in)</label>
               <input
@@ -454,15 +539,6 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
                 placeholder="4.0"
                 value={dimensions.height}
                 onChange={(e) => setDimensions({ ...dimensions, height: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Priority (-1k to 1k)</label>
-              <input
-                type="number"
-                value={priority}
-                onChange={(e) => setPriority(Number(e.target.value))}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900"
               />
             </div>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Rounded Background Container with subtle gradient / crisp border for high visibility -->
+  <rect width="512" height="512" rx="112" fill="#000072" />
+  
+  <!-- Mascot Robot Group scaled to fill prominently -->
+  <g transform="translate(48, 64) scale(0.8125)">
+    <!-- Left Antenna -->
+    <path d="M190 140 L165 70" stroke="#FB7C20" stroke-width="20" stroke-linecap="round" />
+    <circle cx="160" cy="60" r="22" fill="#FB7C20" />
+    <circle cx="160" cy="60" r="14" fill="#FFFFFF" />
+
+    <!-- Right Antenna -->
+    <path d="M322 140 L347 70" stroke="#FB7C20" stroke-width="20" stroke-linecap="round" />
+    <circle cx="352" cy="60" r="22" fill="#FB7C20" />
+    <circle cx="352" cy="60" r="14" fill="#FFFFFF" />
+
+    <!-- Left Arm -->
+    <path d="M90 350 C90 280 120 220 150 210 L140 350 Z" fill="#FF9A4D" />
+
+    <!-- Right Arm -->
+    <path d="M422 350 C422 280 392 220 362 210 L372 350 Z" fill="#FF9A4D" />
+
+    <!-- Robot Main Outer Head (Orange) -->
+    <path d="M130 350 C130 170 170 120 256 120 C342 120 382 170 382 350 Z" fill="#FB7C20" />
+
+    <!-- Robot Face Screen (White Inner) -->
+    <path d="M165 340 C165 200 190 160 256 160 C322 160 347 200 347 340 Z" fill="#FFFFFF" />
+
+    <!-- Left Eye (Deep Navy Blue) -->
+    <circle cx="215" cy="245" r="22" fill="#000072" />
+    <circle cx="222" cy="238" r="6" fill="#FFFFFF" />
+
+    <!-- Right Eye (Deep Navy Blue) -->
+    <circle cx="297" cy="245" r="22" fill="#000072" />
+    <circle cx="304" cy="238" r="6" fill="#FFFFFF" />
+
+    <!-- Smiling Mouth -->
+    <path d="M238 275 Q256 295 274 275" stroke="#000072" stroke-width="10" stroke-linecap="round" fill="none" />
+
+    <!-- Base Horizon Bar -->
+    <rect x="60" y="345" width="392" height="18" rx="9" fill="#FB7C20" />
+    
+    <!-- Sparkle Elements -->
+    <circle cx="410" cy="140" r="10" fill="#FB7C20" />
+    <path d="M430 200 L430 216 M422 208 L438 208" stroke="#FB7C20" stroke-width="6" stroke-linecap="round" />
+    <circle cx="105" cy="190" r="8" fill="#FB7C20" />
+  </g>
+</svg>
