@@ -105,7 +105,7 @@ export default function Sidebar() {
         <Link href="/dashboard" className="flex items-center">
           <Image
             src={logoImg}
-            alt="Dejumblify"
+            alt="Dejumblefy"
             className="h-30 w-30"
             priority
           />
@@ -152,7 +152,7 @@ export default function Sidebar() {
             </div>
             <div className="overflow-hidden text-xs">
               <p className="truncate font-semibold text-slate-900">{user?.name || "Administrator"}</p>
-              <p className="truncate text-[11px] text-slate-500">{user?.email || "admin@dejumblify.com"}</p>
+              <p className="truncate text-[11px] text-slate-500">{user?.email || "admin@dejumblefy.com"}</p>
             </div>
           </div>
           <button

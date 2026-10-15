@@ -180,7 +180,7 @@ export default function CreateTokenPackModal({
                 type="text"
                 value={storeProductIdApple}
                 onChange={(e) => setStoreProductIdApple(e.target.value)}
-                placeholder="com.dejumblify.token500"
+                placeholder="com.dejumblefy.token500"
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 font-mono focus:border-[#FB7C20] focus:outline-none"
               />
             </div>
@@ -193,7 +193,7 @@ export default function CreateTokenPackModal({
                 type="text"
                 value={storeProductIdGoogle}
                 onChange={(e) => setStoreProductIdGoogle(e.target.value)}
-                placeholder="dejumblify_tokens_500"
+                placeholder="dejumblefy_tokens_500"
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900 font-mono focus:border-[#FB7C20] focus:outline-none"
               />
             </div>

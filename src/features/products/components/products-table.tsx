@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   Plus,
   Loader2,
-  MousePointerClick,
 } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { ProductItem } from "../types/products.types";
@@ -97,7 +96,6 @@ export default function ProductsTable({
               <th className="py-3.5 px-4">Product & ASIN</th>
               <th className="py-3.5 px-4">Categories / Styles</th>
               <th className="py-3.5 px-4 text-center">Link Health</th>
-              <th className="py-3.5 px-4 text-center">Clicks & Priority</th>
               <th className="py-3.5 px-4 text-center">Catalog Status</th>
               <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
@@ -232,19 +230,6 @@ export default function ProductsTable({
                           </button>
                         </div>
                       )}
-                    </div>
-                  </td>
-
-                  {/* Clicks & Priority */}
-                  <td className="py-3.5 px-4 text-center">
-                    <div className="inline-flex flex-col items-center gap-0.5">
-                      <div className="inline-flex items-center gap-1 font-semibold text-slate-800">
-                        <MousePointerClick className="h-3 w-3 text-slate-400" />
-                        <span>{product.clickCount ?? 0}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">
-                        P{product.priority ?? 0}
-                      </span>
                     </div>
                   </td>
 

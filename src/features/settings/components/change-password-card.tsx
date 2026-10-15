@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { useChangePasswordMutation } from "../api/settings.mutations";
+import { formatErrorMessage } from "@/utils/error";
 
 export default function ChangePasswordCard() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -30,7 +31,7 @@ export default function ChangePasswordCard() {
 
   const passwordValidation = useMemo(() => {
     return {
-      hasMinLength: newPassword.length >= 8,
+      hasMinLength: newPassword.length >= 8 && newPassword.length <= 64,
       hasUppercase: /[A-Z]/.test(newPassword),
       hasNumber: /[0-9]/.test(newPassword),
       hasSpecial: /[^A-Za-z0-9]/.test(newPassword),
@@ -39,7 +40,8 @@ export default function ChangePasswordCard() {
   }, [newPassword, confirmPassword]);
 
   const isFormValid =
-    currentPassword.length >= 6 &&
+    currentPassword.length >= 8 &&
+    currentPassword.length <= 64 &&
     passwordValidation.hasMinLength &&
     passwordValidation.hasUppercase &&
     passwordValidation.hasNumber &&
@@ -53,6 +55,16 @@ export default function ChangePasswordCard() {
 
     if (!currentPassword) {
       setErrorMessage("Current password is required.");
+      return;
+    }
+
+    if (currentPassword.length < 8) {
+      setErrorMessage("Current password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword.length < 8 || newPassword.length > 64) {
+      setErrorMessage("New password must be between 8 and 64 characters.");
       return;
     }
 
@@ -72,9 +84,8 @@ export default function ChangePasswordCard() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
       setErrorMessage(
-        error?.response?.data?.message || error?.message || "Failed to update password."
+        formatErrorMessage(err, "Failed to update password.")
       );
     }
   };
@@ -119,6 +130,7 @@ export default function ChangePasswordCard() {
             <input
               type={showCurrent ? "text" : "password"}
               required
+              maxLength={64}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="Enter your active password"
@@ -144,6 +156,7 @@ export default function ChangePasswordCard() {
               <input
                 type={showNew ? "text" : "password"}
                 required
+                maxLength={64}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="At least 8 characters"
@@ -167,6 +180,7 @@ export default function ChangePasswordCard() {
               <input
                 type={showConfirm ? "text" : "password"}
                 required
+                maxLength={64}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat new password"

@@ -3,17 +3,17 @@
 import { useState } from "react";
 import {
   Coins,
-  Cpu,
   Gift,
   X,
   Loader2,
   Shield,
   CheckCircle2,
   XCircle,
-  Activity,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
-import { useUserDetailQuery, useUserLedgerQuery, useUserActivityQuery } from "../api/users.queries";
-import { UserActivityType } from "../types/users.types";
+import { useUserDetailQuery, useUserLedgerQuery } from "../api/users.queries";
+import { useToggleBlockUserMutation } from "../api/users.mutations";
 
 interface UserDetailModalProps {
   userId: string | null;
@@ -22,19 +22,26 @@ interface UserDetailModalProps {
 }
 
 export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "ledger" | "activity">("overview");
-  const [activityType, setActivityType] = useState<UserActivityType | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<"overview" | "ledger">("overview");
 
   const { data: user, isLoading: isUserLoading } = useUserDetailQuery(userId);
   const { data: ledgerData, isLoading: isLedgerLoading } = useUserLedgerQuery(userId, {
-    limit: 15,
+    limit: 20,
   });
-  const { data: activityData, isLoading: isActivityLoading } = useUserActivityQuery(
-    userId,
-    activeTab === "activity" ? { type: activityType, limit: 30 } : undefined
-  );
+  const toggleBlockMutation = useToggleBlockUserMutation();
 
   if (!isOpen || !userId) return null;
+
+  const isSuspended = user?.isDeactivatedByAdmin || user?.status === "suspended";
+
+  const handleToggleBlock = async () => {
+    if (!user) return;
+    const newToggleState = !user.isDeactivatedByAdmin;
+    await toggleBlockMutation.mutateAsync({
+      id: user._id,
+      payload: { toggle: newToggleState },
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
@@ -42,20 +49,36 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 p-6 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#000072]/10 text-[#000072] border border-[#000072]/20 font-bold text-lg">
-              {user?.name ? user.name[0].toUpperCase() : user?.email[0].toUpperCase() || "U"}
-            </div>
+            {user?.profilePicture?.location ? (
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-xs">
+                <img
+                  src={user.profilePicture.location}
+                  alt={user.name || user.email || "User avatar"}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#000072]/10 text-[#000072] border border-[#000072]/20 font-bold text-lg">
+                {user?.name ? user.name[0].toUpperCase() : user?.email?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-slate-900 text-lg">{user?.name || "Unnamed User"}</h3>
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold border ${
-                    user?.isDeactivatedByAdmin
+                    isSuspended
                       ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : user?.status === "pending" || user?.isEmailVerified === false
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
                       : "bg-emerald-50 text-emerald-700 border-emerald-200"
                   }`}
                 >
-                  {user?.isDeactivatedByAdmin ? "Suspended" : "Active"}
+                  {isSuspended
+                    ? "Suspended"
+                    : user?.status === "pending" || user?.isEmailVerified === false
+                    ? "Pending Verification"
+                    : "Active"}
                 </span>
               </div>
               <p className="text-xs text-slate-500">{user?.email}</p>
@@ -66,7 +89,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
             type="button"
             onClick={onClose}
             aria-label="Close user details modal"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -76,33 +99,23 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
         <div className="flex border-b border-slate-200 px-6 pt-2 bg-white">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
               activeTab === "overview"
                 ? "border-[#FB7C20] text-[#FB7C20]"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            Overview & AI Usage
+            Overview & Balances
           </button>
           <button
             onClick={() => setActiveTab("ledger")}
-            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
               activeTab === "ledger"
                 ? "border-[#FB7C20] text-[#FB7C20]"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
             Token Ledger
-          </button>
-          <button
-            onClick={() => setActiveTab("activity")}
-            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
-              activeTab === "activity"
-                ? "border-[#FB7C20] text-[#FB7C20]"
-                : "border-transparent text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Activity Timeline
           </button>
         </div>
 
@@ -113,7 +126,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
               <Loader2 className="h-6 w-6 animate-spin text-[#FB7C20]" />
             </div>
           ) : !user ? (
-            <div className="text-center text-xs text-slate-400">User details not found.</div>
+            <div className="text-center text-xs text-slate-400 py-12">User details not found.</div>
           ) : activeTab === "overview" ? (
             <>
               {/* Quick Stat Pill Grid */}
@@ -152,7 +165,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
               {/* Account Details Box */}
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2.5 text-xs">
                 <h4 className="font-bold text-slate-900 text-xs">Account Information</h4>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 pt-1">
                   <div className="flex items-center justify-between text-slate-500">
                     <span>Email Verified:</span>
                     <span className="font-medium text-slate-800">
@@ -178,7 +191,11 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                   <div className="flex items-center justify-between text-slate-500">
                     <span>Referred By:</span>
                     <span className="font-medium text-slate-800">
-                      {user.referredBy?.name || user.referredBy?.email || "None"}
+                      {user.referredBy
+                        ? user.referredBy.name
+                          ? `${user.referredBy.name} (${user.referredBy.email})`
+                          : user.referredBy.email
+                        : "Direct signup (None)"}
                     </span>
                   </div>
 
@@ -199,36 +216,8 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                   </div>
                 </div>
               </div>
-
-              {/* AI Usage Breakdown */}
-              {/* <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-[#000072]" />
-                  <h4 className="font-bold text-slate-900 text-xs">AI Chat & Declutter Activity</h4>
-                </div>
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-xs">
-                    <div className="text-base font-bold text-slate-900">
-                      {user.aiUsage?.totalChats ?? 0}
-                    </div>
-                    <div className="text-[10px] text-slate-500">Chats Created</div>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-xs">
-                    <div className="text-base font-bold text-slate-900">
-                      {user.aiUsage?.messagesCount ?? 0}
-                    </div>
-                    <div className="text-[10px] text-slate-500">Replies Received</div>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-xs">
-                    <div className="text-base font-bold text-slate-900">
-                      {user.aiUsage?.imagesCount ?? 0}
-                    </div>
-                    <div className="text-[10px] text-slate-500">AI Images</div>
-                  </div>
-                </div>
-              </div> */}
             </>
-          ) : activeTab === "ledger" ? (
+          ) : (
             /* Ledger Tab */
             <div className="space-y-3">
               {isLedgerLoading ? (
@@ -274,87 +263,38 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                 </div>
               )}
             </div>
-          ) : (
-            /* Activity Timeline Tab */
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Activity className="h-3.5 w-3.5 text-[#000072]" /> Activity Stream
-                </span>
-                <select
-                  value={activityType || ""}
-                  onChange={(e) =>
-                    setActivityType((e.target.value as UserActivityType) || undefined)
-                  }
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 font-medium focus:border-[#FB7C20] focus:outline-none"
-                >
-                  <option value="">All Activities</option>
-                  <option value="logins">Logins</option>
-                  <option value="uploads">Uploads</option>
-                  <option value="purchases">Purchases</option>
-                  <option value="usage">Usage</option>
-                  <option value="transactions">Transactions</option>
-                  <option value="ai">AI Chats</option>
-                  <option value="referrals">Referrals</option>
-                </select>
-              </div>
-
-              {isActivityLoading ? (
-                <div className="flex h-36 items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-[#FB7C20]" />
-                </div>
-              ) : !activityData?.items?.length ? (
-                <div className="text-center py-8 text-xs text-slate-400 rounded-xl border border-slate-200 bg-slate-50">
-                  No activity events found for the selected filter.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {activityData.items.map((act) => (
-                    <div
-                      key={act._id}
-                      className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs space-y-1 hover:border-slate-300 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-[#000072]/10 border border-[#000072]/20 px-2 py-0.5 text-[10px] font-bold text-[#000072] uppercase tracking-wider">
-                            {act.type || "event"}
-                          </span>
-                          <span className="font-semibold text-slate-900">
-                            {act.action || act.description || "Activity logged"}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-400">
-                          {act.createdAt ? new Date(act.createdAt).toLocaleString() : ""}
-                        </span>
-                      </div>
-
-                      {act.description && act.action && act.description !== act.action && (
-                        <p className="text-[11px] text-slate-600 pl-1">{act.description}</p>
-                      )}
-
-                      {(act.ip || act.userAgent) && (
-                        <div className="flex items-center gap-3 text-[10px] text-slate-500 pt-1 font-mono">
-                          {act.ip && <span>IP: {act.ip}</span>}
-                          {act.userAgent && (
-                            <span className="truncate max-w-[200px]" title={act.userAgent}>
-                              Agent: {act.userAgent}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-200 p-4 flex justify-end bg-slate-50/50">
+        {/* Footer with only Suspend/Block/Unban capability & Close */}
+        <div className="border-t border-slate-200 p-4 flex items-center justify-between bg-slate-50/50">
+          <div>
+            {user && (
+              <button
+                type="button"
+                onClick={handleToggleBlock}
+                disabled={toggleBlockMutation.isPending}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                  isSuspended
+                    ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                    : "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                }`}
+              >
+                {toggleBlockMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isSuspended ? (
+                  <ShieldAlert className="h-4 w-4 text-rose-600" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4 text-amber-700" />
+                )}
+                <span>{isSuspended ? "Unban Account" : "Suspend Account"}</span>
+              </button>
+            )}
+          </div>
+
           <button
             onClick={onClose}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             Close
           </button>

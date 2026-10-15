@@ -17,10 +17,18 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Dejumblify Admin Panel",
-    template: "%s | Dejumblify Admin",
+    default: "Dejumblefy Admin Panel",
+    template: "%s | Dejumblefy Admin",
   },
-  description: "Administrative Management Dashboard for Dejumblify",
+  description: "Administrative Management Dashboard for Dejumblefy",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 interface RootLayoutProps {

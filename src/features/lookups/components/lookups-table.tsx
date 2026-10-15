@@ -2,22 +2,15 @@
 
 import { useState } from "react";
 import {
-  ArrowUp,
-  ArrowDown,
   Edit2,
   Trash2,
   CheckCircle2,
   XCircle,
-  Layers,
-  Sparkles,
   Loader2,
 } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { LookupItem, LookupType } from "../types/lookups.types";
-import {
-  useUpdateLookupMutation,
-  useReorderLookupsMutation,
-} from "../api/lookups.mutations";
+import { useUpdateLookupMutation } from "../api/lookups.mutations";
 
 interface LookupsTableProps {
   items: LookupItem[];
@@ -36,11 +29,9 @@ export default function LookupsTable({
   onDelete,
   onAddNew,
 }: LookupsTableProps) {
-  const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const updateMutation = useUpdateLookupMutation();
-  const reorderMutation = useReorderLookupsMutation();
 
   const handleToggleActive = async (item: LookupItem) => {
     try {
@@ -51,27 +42,6 @@ export default function LookupsTable({
       });
     } finally {
       setTogglingId(null);
-    }
-  };
-
-  const handleMove = async (index: number, direction: "up" | "down") => {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= items.length) return;
-
-    const newItems = [...items];
-    const [moved] = newItems.splice(index, 1);
-    newItems.splice(targetIndex, 0, moved);
-
-    const orderedIds = newItems.map((i) => i._id);
-
-    try {
-      setReorderingId(moved._id);
-      await reorderMutation.mutateAsync({
-        type,
-        ids: orderedIds,
-      });
-    } finally {
-      setReorderingId(null);
     }
   };
 
@@ -107,13 +77,11 @@ export default function LookupsTable({
               <th className="py-3 px-4">Label & Slug</th>
               <th className="py-3 px-4">Description</th>
               <th className="py-3 px-4 text-center">Status</th>
-              <th className="py-3 px-4 text-center">Reorder</th>
               <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map((item, index) => {
-              const isMoving = reorderingId === item._id;
               const isToggling = togglingId === item._id;
 
               return (
@@ -126,7 +94,7 @@ export default function LookupsTable({
                   {/* Order Index */}
                   <td className="py-3 px-4 text-center font-mono text-xs">
                     <span className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                      {item.sortOrder ?? index + 1}
+                      {index + 1}
                     </span>
                   </td>
 
@@ -185,44 +153,20 @@ export default function LookupsTable({
                     </button>
                   </td>
 
-                  {/* Reorder Buttons (Move Up / Down) */}
-                  <td className="py-3 px-4 text-center">
-                    <div className="inline-flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
-                      <button
-                        onClick={() => handleMove(index, "up")}
-                        disabled={index === 0 || isMoving || reorderMutation.isPending}
-                        title="Move Up"
-                        className="rounded p-1 text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors shadow-2xs"
-                      >
-                        <ArrowUp className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleMove(index, "down")}
-                        disabled={
-                          index === items.length - 1 || isMoving || reorderMutation.isPending
-                        }
-                        title="Move Down"
-                        className="rounded p-1 text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors shadow-2xs"
-                      >
-                        <ArrowDown className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-
                   {/* Actions */}
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onEdit(item)}
                         title="Edit Details"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 border border-transparent hover:border-amber-200 transition-all"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 border border-transparent hover:border-amber-200 transition-all cursor-pointer"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => onDelete(item)}
                         title="Deactivate Lookup"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200 transition-all"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200 transition-all cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

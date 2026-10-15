@@ -1,8 +1,8 @@
 import LoginForm from "@/features/auth/components/login-form";
 
 export const metadata = {
-  title: "Admin Login | Dejumblify Admin Panel",
-  description: "Secure login for Dejumblify administrators",
+  title: "Admin Login | Dejumblefy Admin Panel",
+  description: "Secure login for Dejumblefy administrators",
 };
 
 export default function LoginPage() {

@@ -135,10 +135,6 @@ export default function ProductDetailModal({
                   <MousePointerClick className="h-3 w-3 text-[#000072]" />
                   <span>{product.clickCount ?? 0} clicks</span>
                 </span>
-
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] text-slate-600 border border-slate-200 font-mono">
-                  Priority: {product.priority ?? 0}
-                </span>
               </div>
             </div>
           </div>

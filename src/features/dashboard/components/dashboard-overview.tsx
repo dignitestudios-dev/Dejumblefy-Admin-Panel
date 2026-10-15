@@ -119,9 +119,8 @@ export default function DashboardOverview() {
         />
 
         <StatCard
-          title="Tokens In Circulation"
+          title="Total Tokens Purchased by Users"
           value={isLoading ? "..." : (overview?.totalTokensPurchased ?? 0).toLocaleString()}
-          subtitle={`${overview?.totalTokensUsed ?? 0} used for AI replies`}
           icon={Coins}
         />
 

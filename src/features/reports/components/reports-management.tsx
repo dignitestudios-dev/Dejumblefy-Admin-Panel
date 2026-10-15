@@ -5,6 +5,7 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { ReportsQueryParams } from "../types/reports.types";
 import { useReportsQuery } from "../api/reports.queries";
@@ -73,15 +74,25 @@ export default function ReportsManagement() {
           </div>
           <button
             onClick={() => refetch()}
-            className="rounded-lg bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-800 hover:bg-rose-200"
+            className="rounded-lg bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-800 hover:bg-rose-200 cursor-pointer"
           >
             Retry
           </button>
         </div>
       )}
 
-      {/* Loading Skeleton */}
-      {isLoading ? (
+      {/* Custom Date Range Prompt */}
+      {filters.period === "custom" && (!filters.startDate || !filters.endDate) ? (
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center shadow-xs">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-[#FB7C20] border border-orange-100 mb-3">
+            <Calendar className="h-6 w-6" />
+          </div>
+          <h4 className="text-base font-semibold text-slate-900 mb-1">Select Custom Date Range</h4>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Please pick both a Start Date and an End Date above to generate report metrics for your custom period.
+          </p>
+        </div>
+      ) : isLoading ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-xs">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#FB7C20] mb-3" />
           <p className="text-sm font-medium text-slate-500">Aggregating multi-source analytics...</p>

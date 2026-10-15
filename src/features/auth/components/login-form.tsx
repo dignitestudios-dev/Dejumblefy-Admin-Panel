@@ -14,10 +14,22 @@ import { useAppDispatch } from "@/store";
 import { setCredentials } from "@/store/slices/auth.slice";
 import { STORAGE_KEYS } from "@/utils/constants";
 import { DEFAULT_REDIRECT } from "@/config/routes";
+import { formatErrorMessage } from "@/utils/error";
 
 const loginSchema = z.object({
-  email: z.string().trim().min(1, "Email is required").email("Please enter a valid email"),
-  password: z.string().trim().min(6, "Password must be at least 6 characters"),
+  email: z
+    .string()
+    .transform((val) => val.replace(/\s+/g, ""))
+    .pipe(
+      z
+        .string()
+        .min(1, "Email is required")
+        .email("Please enter a valid email")
+    ),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(64, "Password cannot exceed 64 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -33,9 +45,11 @@ export default function LoginForm() {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
     defaultValues: {
       email: "",
       password: "",
@@ -47,7 +61,10 @@ export default function LoginForm() {
     setErrorMessage(null);
 
     try {
-      const response = await loginAdmin(data);
+      const response = await loginAdmin({
+        email: data.email.replace(/\s+/g, ""),
+        password: data.password,
+      });
 
       if (response && response.token) {
         localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.token);
@@ -69,22 +86,16 @@ export default function LoginForm() {
         setErrorMessage("Unexpected login response. Please check your credentials.");
       }
     } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Authentication failed. Please check your credentials.";
-      setErrorMessage(message);
+      setErrorMessage(
+        formatErrorMessage(err, "Authentication failed. Please check your credentials.")
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDemoFill = () => {
-    setValue("email", "admin@dejumblify.com");
+    setValue("email", "admin@dejumblefy.com");
     setValue("password", "Admin@1234");
     setErrorMessage(null);
   };
@@ -93,14 +104,18 @@ export default function LoginForm() {
     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
       {/* Brand Header */}
       <div className="mb-6 text-center flex flex-col items-center">
-        <Image
-          src={logoImg}
-          alt="Dejumblify"
-          className="h-28 w-auto max-w-[280px] object-contain mb-4 drop-shadow-xs"
-          priority
-        />
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Admin Portal</h1>
-        <p className="mt-1 text-xs text-slate-500">Sign in to access your administrative dashboard</p>
+        <div className="relative mb-3 flex items-center justify-center">
+          <Image
+            src={logoImg}
+            alt="Dejumblefy"
+            className="h-32 sm:h-36 w-auto max-w-[320px] object-contain drop-shadow-sm transition-transform duration-200 hover:scale-[1.02]"
+            priority
+          />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Admin Portal</h1>
+        <p className="mt-1.5 text-sm font-medium text-slate-600">
+          Sign in to access your administrative dashboard
+        </p>
       </div>
 
       {/* Error Alert */}
@@ -112,7 +127,7 @@ export default function LoginForm() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
             Email Address <span className="text-rose-500">*</span>
@@ -123,12 +138,19 @@ export default function LoginForm() {
               type="email"
               maxLength={120}
               disabled={isLoading}
-              {...register("email")}
+              {...register("email", {
+                onChange: (e) => {
+                  // Clean whitespace on input
+                  e.target.value = e.target.value.replace(/\s+/g, "");
+                },
+              })}
               placeholder="Enter Email"
               className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] disabled:opacity-50"
             />
           </div>
-          {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email.message}</p>}
+          {isSubmitted && errors.email && (
+            <p className="mt-1 text-xs text-rose-600">{errors.email.message}</p>
+          )}
         </div>
 
         <div>
@@ -147,7 +169,7 @@ export default function LoginForm() {
             <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type={showPassword ? "text" : "password"}
-              maxLength={100}
+              maxLength={64}
               disabled={isLoading}
               {...register("password")}
               placeholder="••••••••••••"
@@ -163,7 +185,7 @@ export default function LoginForm() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.password && (
+          {isSubmitted && errors.password && (
             <p className="mt-1 text-xs text-rose-600">{errors.password.message}</p>
           )}
         </div>
@@ -183,9 +205,6 @@ export default function LoginForm() {
           )}
         </button>
       </form>
-
-      {/* Demo Credentials Quick-Fill Helper */}
-    
     </div>
   );
 }

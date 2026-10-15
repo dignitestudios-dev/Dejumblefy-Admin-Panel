@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   ShoppingBag,
   Sparkles,
   AlertCircle,
   Loader2,
-  ExternalLink,
-  Plus,
-  Trash2,
 } from "lucide-react";
 import { useCreateProductMutation, useAISuggestTagsMutation } from "../api/products.mutations";
 import { useLookupsQuery } from "@/features/lookups/api/lookups.queries";
+import { validateAmazonUrl, extractAsin, isDummyOrInvalidAsin } from "../utils/products.utils";
 
 interface CreateProductModalProps {
   isOpen: boolean;
@@ -34,6 +32,14 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
   const [isActive, setIsActive] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Validation / Touched state
+  const [touched, setTouched] = useState<{
+    amazonUrl?: boolean;
+    title?: boolean;
+    categories?: boolean;
+  }>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   // Queries & Mutations
   const { data: categories = [] } = useLookupsQuery({ type: "category", isActive: true });
   const { data: styles = [] } = useLookupsQuery({ type: "style", isActive: true });
@@ -42,7 +48,54 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
   const createMutation = useCreateProductMutation();
   const aiSuggestMutation = useAISuggestTagsMutation();
 
+  const handleReset = useCallback(() => {
+    setAmazonUrl("");
+    setTitle("");
+    setImageUrl("");
+    setAiDescription("");
+    setSelectedCategories([]);
+    setSelectedStyles([]);
+    setSelectedMaterials([]);
+    setTags([]);
+    setNewTagInput("");
+    setDimensions({ length: "", width: "", height: "" });
+    setPriority(0);
+    setIsActive(true);
+    setErrorMsg(null);
+    setTouched({});
+    setIsSubmitted(false);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      handleReset();
+    }
+  }, [isOpen, handleReset]);
+
   if (!isOpen) return null;
+
+  const amazonValidation = validateAmazonUrl(amazonUrl);
+  const amazonUrlError =
+    (touched.amazonUrl || isSubmitted) && !amazonValidation.isValid
+      ? amazonValidation.error || "Please enter a valid Amazon product URL."
+      : null;
+
+  const detectedAsin = amazonUrl.trim() ? extractAsin(amazonUrl) : null;
+
+  const titleError =
+    (touched.title || isSubmitted) && !title.trim()
+      ? "Product title is required."
+      : null;
+
+  const categoriesError =
+    (touched.categories || isSubmitted) && selectedCategories.length === 0
+      ? "At least one room category must be selected."
+      : null;
+
+  const handleClose = () => {
+    handleReset();
+    onClose();
+  };
 
   const toggleItem = (list: string[], setList: (val: string[]) => void, item: string) => {
     if (list.includes(item)) {
@@ -65,6 +118,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
   };
 
   const handleAISuggest = async () => {
+    setTouched((prev) => ({ ...prev, title: true }));
     if (!title.trim()) {
       setErrorMsg("Please enter a product title before requesting AI tag suggestions.");
       return;
@@ -102,13 +156,19 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitted(true);
     setErrorMsg(null);
 
-    if (!amazonUrl.trim()) {
-      setErrorMsg("Amazon URL is required.");
+    const trimmedUrl = amazonUrl.trim();
+    const trimmedTitle = title.trim();
+
+    const urlCheck = validateAmazonUrl(trimmedUrl);
+    if (!urlCheck.isValid) {
+      setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
       return;
     }
-    if (!title.trim()) {
+
+    if (!trimmedTitle) {
       setErrorMsg("Product title is required.");
       return;
     }
@@ -128,8 +188,8 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
           : null;
 
       await createMutation.mutateAsync({
-        amazonUrl: amazonUrl.trim(),
-        title: title.trim(),
+        amazonUrl: trimmedUrl,
+        title: trimmedTitle,
         categories: selectedCategories,
         styles: selectedStyles,
         materials: selectedMaterials,
@@ -141,6 +201,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
         isActive,
       });
 
+      handleReset();
       onClose();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
@@ -166,23 +227,20 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
           </div>
           <button
             type="button"
-            onClick={() => {
-             
-              onClose();
-            }}
+            onClick={handleClose}
             aria-label="Close add product dialog"
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4 overflow-y-auto flex-1">
           {errorMsg && (
             <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
               <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-              <span>{errorMsg}</span>
+              <span className="break-all">{errorMsg}</span>
             </div>
           )}
 
@@ -194,15 +252,38 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             <input
               type="url"
               maxLength={500}
+              required
               disabled={createMutation.isPending}
               placeholder="https://www.amazon.com/dp/B08N5WRWNW or affiliate link"
               value={amazonUrl}
-              onChange={(e) => setAmazonUrl(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors font-mono disabled:opacity-50"
+              onBlur={() => setTouched((prev) => ({ ...prev, amazonUrl: true }))}
+              onChange={(e) => {
+                setAmazonUrl(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors font-mono disabled:opacity-50 ${
+                amazonUrlError
+                  ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
+              }`}
             />
-            <p className="text-[11px] text-slate-500 mt-1">
-              Backend automatically extracts the ASIN and attaches your Amazon Associate tag.
-            </p>
+            {amazonUrlError ? (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{amazonUrlError}</span>
+              </p>
+            ) : detectedAsin && !isDummyOrInvalidAsin(detectedAsin) ? (
+              <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1.5 font-medium">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 font-mono text-[10px] font-bold text-emerald-800">
+                  ASIN: {detectedAsin}
+                </span>
+                <span className="text-slate-500 text-[11px]">Valid Amazon identifier format</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1">
+                Backend automatically extracts the ASIN and attaches your Amazon Associate tag.
+              </p>
+            )}
           </div>
 
           {/* Title with AI Suggest Button */}
@@ -215,7 +296,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                 type="button"
                 onClick={handleAISuggest}
                 disabled={aiSuggestMutation.isPending || !title.trim() || createMutation.isPending}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FB7C20] hover:text-[#E86B12] disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#FB7C20] hover:text-[#E86B12] disabled:opacity-40 transition-colors cursor-pointer"
               >
                 {aiSuggestMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -228,12 +309,27 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             <input
               type="text"
               maxLength={200}
+              required
               disabled={createMutation.isPending}
               placeholder="e.g. 6-Piece Clear Plastic Drawer Organizer Bins"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors disabled:opacity-50"
+              onBlur={() => setTouched((prev) => ({ ...prev, title: true }))}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors disabled:opacity-50 ${
+                titleError
+                  ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
+                  : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
+              }`}
             />
+            {titleError && (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{titleError}</span>
+              </p>
+            )}
           </div>
 
           {/* Image URL & Preview */}
@@ -275,15 +371,25 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
               Room Categories <span className="text-rose-500">*</span>{" "}
               <span className="text-slate-500 text-[11px] font-normal">(Select where this product fits)</span>
             </label>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 rounded-xl border border-slate-200 bg-slate-50">
+            <div
+              className={`flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 rounded-xl border transition-colors ${
+                categoriesError
+                  ? "border-rose-300 bg-rose-50/30"
+                  : "border-slate-200 bg-slate-50"
+              }`}
+            >
               {categories.map((c) => {
                 const isSelected = selectedCategories.includes(c.slug);
                 return (
                   <button
                     type="button"
                     key={c._id}
-                    onClick={() => toggleItem(selectedCategories, setSelectedCategories, c.slug)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                    onClick={() => {
+                      toggleItem(selectedCategories, setSelectedCategories, c.slug);
+                      setTouched((prev) => ({ ...prev, categories: true }));
+                      if (errorMsg) setErrorMsg(null);
+                    }}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? "bg-[#000072] text-white shadow-xs"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -294,6 +400,12 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                 );
               })}
             </div>
+            {categoriesError && (
+              <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span>{categoriesError}</span>
+              </p>
+            )}
           </div>
 
           {/* Design Styles (from Lookups) */}
@@ -310,7 +422,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                     type="button"
                     key={s._id}
                     onClick={() => toggleItem(selectedStyles, setSelectedStyles, s.slug)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? "bg-[#000072] text-white shadow-xs"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -337,7 +449,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                     type="button"
                     key={m._id}
                     onClick={() => toggleItem(selectedMaterials, setSelectedMaterials, m.slug)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? "bg-[#FB7C20] text-white shadow-xs"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
@@ -372,32 +484,31 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Add
               </button>
             </div>
-          <div className="flex flex-wrap gap-1.5 min-w-0 max-w-full overflow-hidden">
-  {tags.map((tag) => (
-    <span
-      key={tag}
-      className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs text-slate-700"
-    >
-      <span className="min-w-0 max-w-full break-all">
-        #{tag}
-      </span>
-
-      <button
-        type="button"
-        onClick={() => handleRemoveTag(tag)}
-        className="shrink-0 text-slate-400 hover:text-rose-600"
-        aria-label={`Remove ${tag}`}
-      >
-        <X className="h-3 w-3" />
-      </button>
-    </span>
-  ))}
-</div>
+            <div className="flex flex-wrap gap-1.5 min-w-0 max-w-full overflow-hidden">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex max-w-full min-w-0 items-center gap-1 rounded-lg bg-slate-100 border border-slate-200 px-2 py-0.5 text-xs text-slate-700"
+                >
+                  <span className="min-w-0 max-w-full break-all">
+                    #{tag}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="shrink-0 text-slate-400 hover:text-rose-600 cursor-pointer"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* AI Description */}
@@ -421,8 +532,8 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             />
           </div>
 
-          {/* Dimensions & Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          {/* Dimensions */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Length (in)</label>
               <input
@@ -456,15 +567,6 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900"
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Priority (-1k to 1k)</label>
-              <input
-                type="number"
-                value={priority}
-                onChange={(e) => setPriority(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900"
-              />
-            </div>
           </div>
 
           {/* Catalog Active Toggle */}
@@ -478,7 +580,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             <button
               type="button"
               onClick={() => setIsActive(!isActive)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
                 isActive ? "bg-[#FB7C20]" : "bg-slate-300"
               }`}
             >
@@ -494,16 +596,16 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={createMutation.isPending}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex items-center gap-1.5 rounded-xl bg-[#FB7C20] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E86B12] transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl bg-[#FB7C20] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E86B12] transition-all disabled:opacity-50 cursor-pointer"
             >
               {createMutation.isPending ? (
                 <>

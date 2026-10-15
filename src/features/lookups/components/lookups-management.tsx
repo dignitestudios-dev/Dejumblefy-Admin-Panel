@@ -166,7 +166,7 @@ function LookupsManagementInner() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-          <div className="text-xs font-medium text-slate-500">Draft / Inactive</div>
+          <div className="text-xs font-medium text-slate-500">Inactive</div>
           <div className="mt-2 text-2xl font-bold text-slate-400">{inactiveCount}</div>
           <div className="mt-1 text-[11px] text-slate-500">Hidden from pickers</div>
         </div>

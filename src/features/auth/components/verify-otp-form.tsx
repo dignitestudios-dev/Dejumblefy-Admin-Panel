@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 import { verifyOtp, forgotPassword } from "../api/auth.api";
+import { formatErrorMessage } from "@/utils/error";
 
 export default function VerifyOtpForm() {
   const router = useRouter();
@@ -142,19 +143,15 @@ const targetIndex = Math.min(pasteData.length, 3);
       const res = await verifyOtp({ email: trimmedEmail, otp: otpCode });
       router.push(`/reset-password?token=${encodeURIComponent(res.resetToken)}`);
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Invalid or expired verification code.";
-      setErrorMsg(msg);
+      setErrorMsg(formatErrorMessage(err, "Invalid or expired verification code."));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!email.trim()) {
+    const cleanEmail = email.replace(/\s+/g, "");
+    if (!cleanEmail) {
       setErrorMsg("Please enter your email to resend code.");
       return;
     }
@@ -164,17 +161,14 @@ const targetIndex = Math.min(pasteData.length, 3);
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      await forgotPassword({ email: email.trim() });
+      await forgotPassword({ email: cleanEmail });
       setSuccessMsg("A new verification code has been dispatched to your email.");
       setResendCooldown(45);
       // Reset otp digits and focus first
-setOtpDigits(["", "", "", ""]);
+      setOtpDigits(["", "", "", ""]);
       inputRefs.current[0]?.focus();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg =
-        error?.response?.data?.message || error?.message || "Failed to resend code.";
-      setErrorMsg(msg);
+      setErrorMsg(formatErrorMessage(err, "Failed to resend code."));
     } finally {
       setIsResending(false);
     }
@@ -185,20 +179,23 @@ setOtpDigits(["", "", "", ""]);
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
         {/* Header */}
         <div className="mb-6 text-center flex flex-col items-center">
-          <Image
-            src={logoImg}
-            alt="Dejumblify"
-            className="h-24 w-auto max-w-[240px] object-contain mb-4"
-            priority
-          />
+          <div className="relative mb-3 flex items-center justify-center">
+            <Image
+              src={logoImg}
+              alt="Dejumblefy"
+              className="h-28 sm:h-32 w-auto max-w-[280px] object-contain drop-shadow-sm"
+              priority
+            />
+          </div>
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-[#000072]/10 text-[#000072]">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Verify Security Code
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
-Enter the 4-digit OTP code received at your administrator email          </p>
+          <p className="mt-1.5 text-sm font-medium text-slate-600">
+            Enter the 4-digit OTP code received at your administrator email
+          </p>
         </div>
 
         {/* Error Alert */}
