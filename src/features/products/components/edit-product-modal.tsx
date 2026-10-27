@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   X,
   Edit3,
@@ -22,8 +22,20 @@ interface EditProductModalProps {
   onClose: () => void;
 }
 
+const SEEDED_RETAILERS = [
+  { slug: "amazon", label: "Amazon" },
+  { slug: "the-container-store", label: "The Container Store" },
+  { slug: "grove-collaborative", label: "Grove Collaborative" },
+  { slug: "easy-closet", label: "Easy Closet" },
+  { slug: "walmart", label: "Walmart" },
+  { slug: "etsy", label: "Etsy" },
+  { slug: "target", label: "Target" },
+  { slug: "wayfair", label: "Wayfair" },
+];
+
 export default function EditProductModal({ product, isOpen, onClose }: EditProductModalProps) {
-  const [amazonUrl, setAmazonUrl] = useState("");
+  const [retailer, setRetailer] = useState("amazon");
+  const [productLink, setProductLink] = useState("");
   const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [aiDescription, setAiDescription] = useState("");
@@ -40,10 +52,12 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
   const [touched, setTouched] = useState<{
     title?: boolean;
     categories?: boolean;
+    productLink?: boolean;
   }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Queries & Mutations
+  const { data: retailerLookups = [] } = useLookupsQuery({ type: "retailer", isActive: true });
   const { data: categories = [] } = useLookupsQuery({ type: "category", isActive: true });
   const { data: styles = [] } = useLookupsQuery({ type: "style", isActive: true });
   const { data: materials = [] } = useLookupsQuery({ type: "material", isActive: true });
@@ -51,9 +65,40 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
   const updateMutation = useUpdateProductMutation();
   const aiSuggestMutation = useAISuggestTagsMutation();
 
+  const activeRetailers: Array<{ slug: string; label: string; isActive?: boolean }> = useMemo(() => {
+    const list: Array<{ slug: string; label: string; isActive?: boolean }> = (
+      retailerLookups as Array<{ slug?: string; label: string; isActive?: boolean }>
+    )
+      .filter((r) => Boolean(r.slug))
+      .map((r) => ({ slug: r.slug!, label: r.label, isActive: r.isActive ?? true }));
+
+    for (const seeded of SEEDED_RETAILERS) {
+      if (!list.some((r) => r.slug === seeded.slug)) {
+        list.push({ ...seeded, isActive: true });
+      }
+    }
+    if (product && product.retailer && !list.some((r) => r.slug === product.retailer)) {
+      list.push({
+        label: product.retailer.charAt(0).toUpperCase() + product.retailer.slice(1),
+        slug: product.retailer,
+        isActive: false,
+      });
+    }
+    return list;
+  }, [retailerLookups, product]);
+
+  const selectedRetailerObj = activeRetailers.find((r) => r.slug === retailer) || {
+    slug: retailer,
+    label: retailer === "amazon" ? "Amazon" : retailer,
+  };
+  const isAmazon = retailer === "amazon";
+  const initialRetailer = product?.retailer || "amazon";
+  const isRetailerChanged = retailer !== initialRetailer;
+
   useEffect(() => {
     if (product) {
-      setAmazonUrl(product.defaultLink || "");
+      setRetailer(product.retailer || "amazon");
+      setProductLink(product.defaultLink || "");
       setTitle(product.title || "");
       setImageUrl(product.imageUrl || "");
       setAiDescription(product.aiDescription || "");
@@ -73,8 +118,6 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
       setIsSubmitted(false);
     }
   }, [product]);
-
-  if (!isOpen || !product) return null;
 
   const titleError =
     (touched.title || isSubmitted) && !title.trim()
@@ -145,11 +188,11 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!product) return;
     setIsSubmitted(true);
     setErrorMsg(null);
 
     const trimmedTitle = title.trim();
-
     if (!trimmedTitle) {
       setErrorMsg("Product title is required.");
       return;
@@ -159,12 +202,31 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
       return;
     }
 
-    const trimmedUrl = amazonUrl.trim();
-    if (trimmedUrl) {
-      const urlCheck = validateAmazonUrl(trimmedUrl);
-      if (!urlCheck.isValid) {
-        setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
-        return;
+    const trimmedLink = productLink.trim();
+    if (isRetailerChanged && (!trimmedLink || trimmedLink === product.defaultLink)) {
+      setErrorMsg("Changing the retailer requires entering the product's new link.");
+      return;
+    }
+
+    if (trimmedLink && trimmedLink !== product.defaultLink) {
+      if (isAmazon) {
+        const urlCheck = validateAmazonUrl(trimmedLink);
+        if (!urlCheck.isValid) {
+          setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
+          return;
+        }
+      } else {
+        const lower = trimmedLink.toLowerCase();
+        if (lower.includes("amazon.com") || lower.includes("amzn.to")) {
+          setErrorMsg("Amazon links must use the Amazon retailer");
+          return;
+        }
+        try {
+          new URL(trimmedLink);
+        } catch {
+          setErrorMsg("Please enter a valid affiliate link from the retailer's network.");
+          return;
+        }
       }
     }
 
@@ -178,21 +240,38 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
             }
           : null;
 
+      const payload: any = {
+        title: trimmedTitle,
+        categories: selectedCategories,
+        styles: selectedStyles,
+        materials: selectedMaterials,
+        tags,
+        imageUrl: imageUrl.trim() || null,
+        aiDescription: aiDescription.trim() || null,
+        dimensions: payloadDims,
+        priority,
+        isActive,
+      };
+
+      if (isRetailerChanged) {
+        payload.retailer = retailer;
+        if (isAmazon) {
+          payload.amazonUrl = trimmedLink;
+        } else {
+          payload.productUrl = trimmedLink;
+        }
+      } else if (trimmedLink && trimmedLink !== product.defaultLink) {
+        if (isAmazon) {
+          payload.amazonUrl = trimmedLink;
+        } else {
+          payload.retailer = retailer;
+          payload.productUrl = trimmedLink;
+        }
+      }
+
       await updateMutation.mutateAsync({
         id: product._id,
-        payload: {
-          amazonUrl: trimmedUrl || undefined,
-          title: trimmedTitle,
-          categories: selectedCategories,
-          styles: selectedStyles,
-          materials: selectedMaterials,
-          tags,
-          imageUrl: imageUrl.trim() || null,
-          aiDescription: aiDescription.trim() || null,
-          dimensions: payloadDims,
-          priority,
-          isActive,
-        },
+        payload,
       });
 
       onClose();
@@ -204,8 +283,10 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
     }
   };
 
-  const detectedEditAsin = amazonUrl.trim() ? extractAsin(amazonUrl) : null;
-  const editAmazonValidation = amazonUrl.trim() ? validateAmazonUrl(amazonUrl) : null;
+  const detectedEditAsin = isAmazon && productLink.trim() ? extractAsin(productLink) : null;
+  const editAmazonValidation = isAmazon && productLink.trim() ? validateAmazonUrl(productLink) : null;
+
+  if (!isOpen || !product) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
@@ -218,8 +299,13 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">Edit Product</h3>
-              <p className="text-xs text-slate-500">
-                ASIN: <span className="font-mono text-slate-700 font-semibold">{product.asin}</span>
+              <p className="text-xs text-slate-500 flex items-center gap-2">
+                <span>Partner: <span className="font-semibold text-slate-800">{selectedRetailerObj.label}</span></span>
+                {product.asin && (
+                  <span>
+                    • ASIN: <span className="font-mono text-slate-700 font-semibold">{product.asin}</span>
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -239,6 +325,36 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
               <span className="break-all">{errorMsg}</span>
             </div>
           )}
+
+          {/* Retailer Selector */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Retailer Partner <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={retailer}
+              disabled={updateMutation.isPending}
+              onChange={(e) => {
+                setRetailer(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 focus:bg-white focus:border-[#FB7C20] focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors"
+            >
+              {activeRetailers.map((r) => (
+                <option key={r.slug} value={r.slug}>
+                  {r.label} {!r.isActive && "(Legacy / Inactive)"}
+                </option>
+              ))}
+            </select>
+            {isRetailerChanged && (
+              <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <span>
+                  <strong>Changing Retailer:</strong> You have selected {selectedRetailerObj.label}. You must provide the product&apos;s new link for this retailer below.
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Title & AI Suggest */}
           <div>
@@ -285,38 +401,56 @@ export default function EditProductModal({ product, isOpen, onClose }: EditProdu
             )}
           </div>
 
-          {/* Amazon URL (Optional change) */}
+          {/* Product URL Input */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Amazon Product URL <span className="text-slate-400 text-[11px] font-normal">(Leave blank if unchanged)</span>
+              {isAmazon ? (
+                <>
+                  Amazon Product URL {isRetailerChanged && <span className="text-rose-500">*</span>}
+                </>
+              ) : (
+                <>
+                  Affiliate Link from {selectedRetailerObj.label}&apos;s Network {isRetailerChanged && <span className="text-rose-500">*</span>}
+                </>
+              )}{" "}
+              <span className="text-slate-400 text-[11px] font-normal">
+                {isRetailerChanged ? "(Required on retailer change)" : "(Leave unchanged or update)"}
+              </span>
             </label>
             <input
               type="url"
+              maxLength={1000}
               placeholder={product.defaultLink}
-              value={amazonUrl}
+              value={productLink}
               onChange={(e) => {
-                setAmazonUrl(e.target.value);
+                setProductLink(e.target.value);
                 if (errorMsg) setErrorMsg(null);
               }}
               className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors font-mono ${
-                amazonUrl.trim() && editAmazonValidation && !editAmazonValidation.isValid
+                isAmazon && productLink.trim() && editAmazonValidation && !editAmazonValidation.isValid
                   ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
                   : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
               }`}
             />
-            {amazonUrl.trim() && editAmazonValidation && !editAmazonValidation.isValid ? (
+            {isAmazon && productLink.trim() && editAmazonValidation && !editAmazonValidation.isValid ? (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="h-3 w-3 shrink-0" />
                 <span>{editAmazonValidation.error}</span>
               </p>
-            ) : detectedEditAsin && !isDummyOrInvalidAsin(detectedEditAsin) ? (
+            ) : isAmazon && detectedEditAsin && !isDummyOrInvalidAsin(detectedEditAsin) ? (
               <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1.5 font-medium">
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 font-mono text-[10px] font-bold text-emerald-800">
                   ASIN: {detectedEditAsin}
                 </span>
                 <span className="text-slate-500 text-[11px]">Valid Amazon identifier format</span>
               </p>
-            ) : null}
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1">
+                {isAmazon
+                  ? "Backend automatically tags Amazon links with your Amazon Associates tag."
+                  : `Paste the final affiliate link from ${selectedRetailerObj.label}'s network.`}
+              </p>
+            )}
           </div>
 
           {/* Image URL & Preview */}

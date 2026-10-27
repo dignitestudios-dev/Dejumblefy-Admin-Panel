@@ -137,11 +137,12 @@ export default function CreateLookupModal({
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Lookup Type <span className="text-rose-500">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: "category" as LookupType, label: "Room Category" },
                 { id: "style" as LookupType, label: "Design Style" },
                 { id: "material" as LookupType, label: "Material" },
+                { id: "retailer" as LookupType, label: "Retailer" },
               ].map((opt) => (
                 <button
                   type="button"
@@ -259,7 +260,7 @@ export default function CreateLookupModal({
             </button>
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || (type === "style" && description.length > 70)}
               className="flex items-center gap-2 rounded-xl bg-[#FB7C20] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E86B12] transition-colors disabled:opacity-50"
             >
               {createMutation.isPending ? (

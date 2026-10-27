@@ -18,6 +18,8 @@ import {
 import { ProductItem } from "../types/products.types";
 import { useCheckProductLinkMutation } from "../api/products.mutations";
 
+import { useLookupsQuery } from "@/features/lookups/api/lookups.queries";
+
 interface ProductDetailModalProps {
   product: ProductItem | null;
   isOpen: boolean;
@@ -33,8 +35,17 @@ export default function ProductDetailModal({
 }: ProductDetailModalProps) {
   const [copied, setCopied] = useState(false);
   const checkLinkMutation = useCheckProductLinkMutation();
+  const { data: retailers = [] } = useLookupsQuery({ type: "retailer" });
 
   if (!isOpen || !product) return null;
+
+  const retailerSlug = product.retailer || "amazon";
+  const matchedRetailer = retailers.find((r) => r.slug === retailerSlug);
+  const retailerName =
+    matchedRetailer?.label ||
+    (retailerSlug === "amazon"
+      ? "Amazon"
+      : retailerSlug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
 
   const handleCopy = () => {
     if (product.defaultLink) {
@@ -83,11 +94,16 @@ export default function ProductDetailModal({
       <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-xs">
-              <span className="font-mono text-xs font-bold text-[#000072]">
-                ASIN: {product.asin}
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-xl border border-slate-200 bg-white px-2.5 py-1 shadow-xs flex items-center gap-2">
+              <span className="font-semibold text-xs text-[#000072]">
+                {retailerName}
               </span>
+              {product.asin && (
+                <span className="font-mono text-xs font-bold text-slate-600 border-l border-slate-200 pl-2">
+                  ASIN: {product.asin}
+                </span>
+              )}
             </div>
             {getLinkStatusBadge()}
           </div>
@@ -179,7 +195,7 @@ export default function ProductDetailModal({
                   className="inline-flex items-center gap-1 rounded-lg bg-[#000072]/10 text-[#000072] border border-[#000072]/20 px-2.5 py-1 text-[11px] font-semibold hover:bg-[#000072]/20 transition-colors"
                 >
                   <ExternalLink className="h-3 w-3" />
-                  <span>Open Amazon</span>
+                  <span>Open on {retailerName}</span>
                 </a>
               </div>
             </div>

@@ -103,6 +103,13 @@ export interface UserActivityItem {
   ip?: string;
   userAgent?: string;
   details?: Record<string, unknown>;
+  referredUser?: {
+    _id: string;
+    name: string | null;
+    email: string;
+  };
+  rewardAmount?: number;
+  rewardStatus?: "earned" | "pending" | string;
   createdAt: string;
   [key: string]: unknown;
 }

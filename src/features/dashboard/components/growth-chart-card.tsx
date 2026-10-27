@@ -147,10 +147,14 @@ export default function GrowthChartCard({ userStats, revenue }: GrowthChartCardP
           </div>
 
           {/* Quick Stats Strip */}
-          <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 text-center">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 text-center">
             <div>
               <div className="text-[10px] uppercase font-semibold text-slate-400">Total in Period</div>
               <div className="text-sm font-bold text-slate-900">{totalUserCount.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Referred Users</div>
+              <div className="text-sm font-bold text-purple-700">{(userStats?.referredUsers ?? 0).toLocaleString()}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase font-semibold text-slate-400">Peak Daily</div>

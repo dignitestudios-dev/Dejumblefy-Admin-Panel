@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Sparkles,
   X,
+  Store,
 } from "lucide-react";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -44,12 +45,21 @@ const TABS: LookupTabConfig[] = [
     description: "Surfaces and structural materials (e.g. Oak Wood, Polished Concrete, Brass)",
     badgeColor: "amber",
   },
+  {
+    type: "retailer",
+    label: "Retailers",
+    pluralLabel: "Retailers",
+    description: "Merchant affiliate partners (e.g. Amazon, Target, Wayfair, Walmart)",
+    badgeColor: "emerald",
+  },
 ];
 
 function LookupsManagementInner() {
   const [tabParam, setTabParam] = useUrlState("type", "category");
   const activeTab: LookupType =
-    tabParam === "style" || tabParam === "material" ? tabParam : "category";
+    tabParam === "style" || tabParam === "material" || tabParam === "retailer"
+      ? tabParam
+      : "category";
 
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 400);
@@ -127,7 +137,14 @@ function LookupsManagementInner() {
       <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xs">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.type;
-          const Icon = tab.type === "category" ? Home : tab.type === "style" ? Palette : Layers;
+          const Icon =
+            tab.type === "category"
+              ? Home
+              : tab.type === "style"
+              ? Palette
+              : tab.type === "material"
+              ? Layers
+              : Store;
 
           return (
             <button

@@ -12,7 +12,11 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { useUserDetailQuery, useUserLedgerQuery } from "../api/users.queries";
+import {
+  useUserDetailQuery,
+  useUserLedgerQuery,
+  useUserActivityQuery,
+} from "../api/users.queries";
 import { useToggleBlockUserMutation } from "../api/users.mutations";
 
 interface UserDetailModalProps {
@@ -22,11 +26,14 @@ interface UserDetailModalProps {
 }
 
 export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "ledger">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "ledger" | "referrals">("overview");
 
   const { data: user, isLoading: isUserLoading } = useUserDetailQuery(userId);
   const { data: ledgerData, isLoading: isLedgerLoading } = useUserLedgerQuery(userId, {
     limit: 20,
+  });
+  const { data: referralsData, isLoading: isReferralsLoading } = useUserActivityQuery(userId, {
+    type: "referrals",
   });
   const toggleBlockMutation = useToggleBlockUserMutation();
 
@@ -116,6 +123,17 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
             }`}
           >
             Token Ledger
+          </button>
+          <button
+            onClick={() => setActiveTab("referrals")}
+            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "referrals"
+                ? "border-[#FB7C20] text-[#FB7C20]"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Gift className="h-3.5 w-3.5" />
+            <span>Referrals {user?.totalReferrals !== undefined ? `(${user.totalReferrals})` : ""}</span>
           </button>
         </div>
 
@@ -217,7 +235,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                 </div>
               </div>
             </>
-          ) : (
+          ) : activeTab === "ledger" ? (
             /* Ledger Tab */
             <div className="space-y-3">
               {isLedgerLoading ? (
@@ -256,6 +274,65 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
                         </div>
                         <div className="text-[10px] text-slate-400">
                           {new Date(item.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Referrals Activity Tab */
+            <div className="space-y-3">
+              {isReferralsLoading ? (
+                <div className="flex h-36 items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#FB7C20]" />
+                </div>
+              ) : !referralsData?.items?.length ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center text-xs text-slate-400">
+                  <Gift className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                  <p className="font-medium text-slate-600">No referral activity recorded</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">This user hasn't referred anyone yet.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+                  {referralsData.items.map((item) => (
+                    <div key={item._id} className="flex items-center justify-between p-3.5 text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 font-bold border border-purple-100">
+                          {item.referredUser?.name
+                            ? item.referredUser.name[0].toUpperCase()
+                            : item.referredUser?.email?.[0]?.toUpperCase() || "R"}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900">
+                            {item.referredUser?.name || "Unnamed User"}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {item.referredUser?.email || "—"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2">
+                          {item.rewardAmount !== undefined && (
+                            <span className="font-bold text-emerald-600">
+                              +{item.rewardAmount} tokens
+                            </span>
+                          )}
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                              item.rewardStatus === "earned"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {item.rewardStatus || "pending"}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}
                         </div>
                       </div>
                     </div>

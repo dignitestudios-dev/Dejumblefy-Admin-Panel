@@ -1,4 +1,4 @@
-export type LookupType = "category" | "style" | "material";
+export type LookupType = "category" | "style" | "material" | "retailer";
 
 export interface LookupItem {
   _id: string;

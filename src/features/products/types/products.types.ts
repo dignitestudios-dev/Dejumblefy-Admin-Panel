@@ -8,7 +8,9 @@ export interface Dimensions {
 
 export interface ProductItem {
   _id: string;
-  asin: string;
+  retailer?: string;
+  asin?: string;
+  linkKey?: string;
   title: string;
   imageUrl?: string | null;
   aiDescription?: string | null;
@@ -31,6 +33,7 @@ export interface ProductsQueryParams {
   page?: number;
   limit?: number;
   category?: string;
+  retailer?: string;
   isActive?: boolean;
   linkStatus?: LinkStatus;
   search?: string;
@@ -48,7 +51,9 @@ export interface PaginatedProductsResponse {
 }
 
 export interface CreateProductPayload {
-  amazonUrl: string;
+  retailer?: string;
+  amazonUrl?: string;
+  productUrl?: string;
   title: string;
   categories: string[];
   imageUrl?: string | null;
@@ -62,7 +67,9 @@ export interface CreateProductPayload {
 }
 
 export interface UpdateProductPayload {
+  retailer?: string;
   amazonUrl?: string;
+  productUrl?: string;
   title?: string;
   categories?: string[];
   imageUrl?: string | null;

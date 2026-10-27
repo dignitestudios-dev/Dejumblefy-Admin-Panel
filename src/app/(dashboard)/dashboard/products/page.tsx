@@ -1,8 +1,8 @@
 import ProductsManagement from "@/features/products/components/products-management";
 
 export const metadata = {
-  title: "Amazon Products | Dejumblefy Admin Panel",
-  description: "Manage Amazon affiliate products, link health status, and AI room tags.",
+  title: "Product Catalog | Dejumblefy Admin Panel",
+  description: "Manage multi-retailer affiliate products, link health status, and AI room tags.",
 };
 
 export default function ProductsPage() {

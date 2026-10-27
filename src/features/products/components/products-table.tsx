@@ -21,8 +21,11 @@ import {
   useCheckProductLinkMutation,
 } from "../api/products.mutations";
 
+import { LookupItem } from "@/features/lookups/types/lookups.types";
+
 interface ProductsTableProps {
   products: ProductItem[];
+  retailers?: LookupItem[];
   isLoading: boolean;
   onInspect: (product: ProductItem) => void;
   onEdit: (product: ProductItem) => void;
@@ -32,6 +35,7 @@ interface ProductsTableProps {
 
 export default function ProductsTable({
   products,
+  retailers,
   isLoading,
   onInspect,
   onEdit,
@@ -43,6 +47,16 @@ export default function ProductsTable({
 
   const setStatusMutation = useSetProductStatusMutation();
   const checkLinkMutation = useCheckProductLinkMutation();
+
+  const getRetailerLabel = (slug?: string) => {
+    if (!slug || slug === "amazon") return "Amazon";
+    const found = retailers?.find((r) => r.slug === slug);
+    if (found) return found.label;
+    return slug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  };
 
   const handleToggleStatus = async (product: ProductItem) => {
     try {
@@ -69,7 +83,7 @@ export default function ProductsTable({
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#FB7C20] mb-3" />
-        <p className="text-xs text-slate-500">Loading Amazon products...</p>
+        <p className="text-xs text-slate-500">Loading products...</p>
       </div>
     );
   }
@@ -93,7 +107,7 @@ export default function ProductsTable({
         <table className="w-full text-left text-xs text-slate-700">
           <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             <tr>
-              <th className="py-3.5 px-4">Product & ASIN</th>
+              <th className="py-3.5 px-4">Product & Retailer</th>
               <th className="py-3.5 px-4">Categories / Styles</th>
               <th className="py-3.5 px-4 text-center">Link Health</th>
               <th className="py-3.5 px-4 text-center">Catalog Status</th>
@@ -104,6 +118,9 @@ export default function ProductsTable({
             {products.map((product) => {
               const isToggling = togglingId === product._id;
               const isCheckingLink = checkingLinkId === product._id;
+              const retailerSlug = product.retailer || "amazon";
+              const retailerLabel = getRetailerLabel(retailerSlug);
+              const isAmazon = retailerSlug === "amazon";
 
               return (
                 <tr
@@ -112,7 +129,7 @@ export default function ProductsTable({
                     !product.isActive ? "opacity-60 bg-slate-50/30" : ""
                   }`}
                 >
-                  {/* Thumbnail, Title & ASIN */}
+                  {/* Thumbnail, Title & Retailer info */}
                   <td className="py-3.5 px-4 max-w-sm">
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white flex items-center justify-center overflow-hidden p-1 shadow-xs">
@@ -138,19 +155,30 @@ export default function ProductsTable({
                         >
                           {product.title}
                         </button>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-mono text-[10px] text-[#000072] bg-[#000072]/10 px-1.5 py-0.5 rounded font-semibold">
-                            {product.asin}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span
+                            className={`font-semibold text-[10px] px-1.5 py-0.5 rounded border ${
+                              isAmazon
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : "bg-teal-50 text-teal-800 border-teal-200"
+                            }`}
+                          >
+                            {retailerLabel}
                           </span>
+                          {product.asin && (
+                            <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-semibold border border-slate-200">
+                              {product.asin}
+                            </span>
+                          )}
                           <a
                             href={product.defaultLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-0.5 text-[11px] text-slate-500 hover:text-slate-800"
-                            title="View on Amazon"
+                            className="inline-flex items-center gap-0.5 text-[11px] text-slate-500 hover:text-slate-800 transition-colors"
+                            title={`View on ${retailerLabel}`}
                           >
                             <ExternalLink className="h-3 w-3" />
-                            <span>Amazon</span>
+                            <span>Link</span>
                           </a>
                         </div>
                       </div>

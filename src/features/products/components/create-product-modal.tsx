@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   ShoppingBag,
@@ -17,8 +17,20 @@ interface CreateProductModalProps {
   onClose: () => void;
 }
 
+const SEEDED_RETAILERS = [
+  { slug: "amazon", label: "Amazon" },
+  { slug: "the-container-store", label: "The Container Store" },
+  { slug: "grove-collaborative", label: "Grove Collaborative" },
+  { slug: "easy-closet", label: "Easy Closet" },
+  { slug: "walmart", label: "Walmart" },
+  { slug: "etsy", label: "Etsy" },
+  { slug: "target", label: "Target" },
+  { slug: "wayfair", label: "Wayfair" },
+];
+
 export default function CreateProductModal({ isOpen, onClose }: CreateProductModalProps) {
-  const [amazonUrl, setAmazonUrl] = useState("");
+  const [retailer, setRetailer] = useState("amazon");
+  const [productLink, setProductLink] = useState("");
   const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [aiDescription, setAiDescription] = useState("");
@@ -34,13 +46,14 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
 
   // Validation / Touched state
   const [touched, setTouched] = useState<{
-    amazonUrl?: boolean;
+    productLink?: boolean;
     title?: boolean;
     categories?: boolean;
   }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Queries & Mutations
+  const { data: retailerLookups = [] } = useLookupsQuery({ type: "retailer", isActive: true });
   const { data: categories = [] } = useLookupsQuery({ type: "category", isActive: true });
   const { data: styles = [] } = useLookupsQuery({ type: "style", isActive: true });
   const { data: materials = [] } = useLookupsQuery({ type: "material", isActive: true });
@@ -48,8 +61,29 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
   const createMutation = useCreateProductMutation();
   const aiSuggestMutation = useAISuggestTagsMutation();
 
+  const activeRetailers: Array<{ slug: string; label: string }> = useMemo(() => {
+    const list: Array<{ slug: string; label: string }> = (
+      retailerLookups as Array<{ slug?: string; label: string }>
+    )
+      .filter((r) => Boolean(r.slug))
+      .map((r) => ({ slug: r.slug!, label: r.label }));
+
+    for (const seeded of SEEDED_RETAILERS) {
+      if (!list.some((r) => r.slug === seeded.slug)) {
+        list.push(seeded);
+      }
+    }
+    return list;
+  }, [retailerLookups]);
+
+  const selectedRetailerObj = activeRetailers.find((r) => r.slug === retailer) || {
+    slug: retailer,
+    label: retailer === "amazon" ? "Amazon" : retailer,
+  };
+
   const handleReset = useCallback(() => {
-    setAmazonUrl("");
+    setRetailer("amazon");
+    setProductLink("");
     setTitle("");
     setImageUrl("");
     setAiDescription("");
@@ -74,13 +108,37 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
 
   if (!isOpen) return null;
 
-  const amazonValidation = validateAmazonUrl(amazonUrl);
-  const amazonUrlError =
-    (touched.amazonUrl || isSubmitted) && !amazonValidation.isValid
-      ? amazonValidation.error || "Please enter a valid Amazon product URL."
-      : null;
+  const isAmazon = retailer === "amazon";
+  const amazonValidation = isAmazon ? validateAmazonUrl(productLink) : null;
+  const detectedAsin = isAmazon && productLink.trim() ? extractAsin(productLink) : null;
 
-  const detectedAsin = amazonUrl.trim() ? extractAsin(amazonUrl) : null;
+  let linkError: string | null = null;
+  if (touched.productLink || isSubmitted) {
+    const trimmed = productLink.trim();
+    if (!trimmed) {
+      linkError = isAmazon
+        ? "Amazon product URL is required."
+        : "Affiliate network product link is required.";
+    } else if (isAmazon) {
+      if (amazonValidation && !amazonValidation.isValid) {
+        linkError = amazonValidation.error || "Please enter a valid Amazon product URL.";
+      }
+    } else {
+      const lower = trimmed.toLowerCase();
+      if (lower.includes("amazon.com") || lower.includes("amzn.to")) {
+        linkError = "Amazon links must use the Amazon retailer";
+      } else {
+        try {
+          const parsed = new URL(trimmed);
+          if (!["http:", "https:"].includes(parsed.protocol)) {
+            linkError = "Please enter a valid HTTP or HTTPS affiliate URL.";
+          }
+        } catch {
+          linkError = "Please enter a valid affiliate URL.";
+        }
+      }
+    }
+  }
 
   const titleError =
     (touched.title || isSubmitted) && !title.trim()
@@ -159,13 +217,32 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
     setIsSubmitted(true);
     setErrorMsg(null);
 
-    const trimmedUrl = amazonUrl.trim();
+    const trimmedLink = productLink.trim();
     const trimmedTitle = title.trim();
 
-    const urlCheck = validateAmazonUrl(trimmedUrl);
-    if (!urlCheck.isValid) {
-      setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
+    if (!trimmedLink) {
+      setErrorMsg(isAmazon ? "Please enter an Amazon product URL." : "Please enter an affiliate network product link.");
       return;
+    }
+
+    if (isAmazon) {
+      const urlCheck = validateAmazonUrl(trimmedLink);
+      if (!urlCheck.isValid) {
+        setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
+        return;
+      }
+    } else {
+      const lower = trimmedLink.toLowerCase();
+      if (lower.includes("amazon.com") || lower.includes("amzn.to")) {
+        setErrorMsg("Amazon links must use the Amazon retailer");
+        return;
+      }
+      try {
+        new URL(trimmedLink);
+      } catch {
+        setErrorMsg("Please enter a valid affiliate link from the retailer's network.");
+        return;
+      }
     }
 
     if (!trimmedTitle) {
@@ -187,8 +264,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             }
           : null;
 
-      await createMutation.mutateAsync({
-        amazonUrl: trimmedUrl,
+      const payload: any = {
         title: trimmedTitle,
         categories: selectedCategories,
         styles: selectedStyles,
@@ -199,7 +275,17 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
         dimensions: payloadDims,
         priority,
         isActive,
-      });
+      };
+
+      if (isAmazon) {
+        payload.amazonUrl = trimmedLink;
+        payload.retailer = "amazon";
+      } else {
+        payload.retailer = retailer;
+        payload.productUrl = trimmedLink;
+      }
+
+      await createMutation.mutateAsync(payload);
 
       handleReset();
       onClose();
@@ -221,8 +307,8 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
               <ShoppingBag className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Add Amazon Product</h3>
-              <p className="text-xs text-slate-500">Add an affiliate item for AI room organization</p>
+              <h3 className="text-base font-bold text-slate-900">Add Product</h3>
+              <p className="text-xs text-slate-500">Add an affiliate item from supported retail partners</p>
             </div>
           </div>
           <button
@@ -244,44 +330,87 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             </div>
           )}
 
-          {/* Amazon URL */}
+          {/* Retailer Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Amazon Product URL <span className="text-rose-500">*</span>
+              Retailer Partner <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={retailer}
+              disabled={createMutation.isPending}
+              onChange={(e) => {
+                setRetailer(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-800 focus:bg-white focus:border-[#FB7C20] focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors"
+            >
+              {activeRetailers.map((r) => (
+                <option key={r.slug} value={r.slug}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              {isAmazon
+                ? "Amazon products automatically attach your Amazon Associates tag."
+                : `Affiliate links for ${selectedRetailerObj.label} are saved exactly as pasted from the affiliate network.`}
+            </p>
+          </div>
+
+          {/* Product URL Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              {isAmazon ? (
+                <>
+                  Amazon Product URL <span className="text-rose-500">*</span>
+                </>
+              ) : (
+                <>
+                  Affiliate Link from {selectedRetailerObj.label}&apos;s Network <span className="text-rose-500">*</span>
+                </>
+              )}
             </label>
             <input
               type="url"
-              maxLength={500}
+              maxLength={1000}
               required
               disabled={createMutation.isPending}
-              placeholder="https://www.amazon.com/dp/B08N5WRWNW or affiliate link"
-              value={amazonUrl}
-              onBlur={() => setTouched((prev) => ({ ...prev, amazonUrl: true }))}
+              placeholder={
+                isAmazon
+                  ? "https://www.amazon.com/dp/B08N5WRWNW or affiliate link"
+                  : `https://goto.${retailer}.com/c/... or affiliate network link`
+              }
+              value={productLink}
+              onBlur={() => setTouched((prev) => ({ ...prev, productLink: true }))}
               onChange={(e) => {
-                setAmazonUrl(e.target.value);
+                setProductLink(e.target.value);
                 if (errorMsg) setErrorMsg(null);
               }}
               className={`w-full rounded-xl border px-3.5 py-2 text-xs transition-colors font-mono disabled:opacity-50 ${
-                amazonUrlError
+                linkError
                   ? "border-rose-300 bg-rose-50/40 text-slate-900 focus:border-rose-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500"
                   : "border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
               }`}
             />
-            {amazonUrlError ? (
+            {linkError ? (
               <p className="text-[11px] text-rose-600 mt-1 flex items-center gap-1 font-medium">
                 <AlertCircle className="h-3 w-3 shrink-0" />
-                <span>{amazonUrlError}</span>
+                <span>{linkError}</span>
               </p>
-            ) : detectedAsin && !isDummyOrInvalidAsin(detectedAsin) ? (
+            ) : isAmazon && detectedAsin && !isDummyOrInvalidAsin(detectedAsin) ? (
               <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1.5 font-medium">
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 font-mono text-[10px] font-bold text-emerald-800">
                   ASIN: {detectedAsin}
                 </span>
                 <span className="text-slate-500 text-[11px]">Valid Amazon identifier format</span>
               </p>
-            ) : (
+            ) : isAmazon ? (
               <p className="text-[11px] text-slate-500 mt-1">
                 Backend automatically extracts the ASIN and attaches your Amazon Associate tag.
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-1">
+                Paste the final tracking affiliate URL from {selectedRetailerObj.label}&apos;s affiliate network (Impact, CJ, Rakuten, etc.). Do not paste a plain product page.
               </p>
             )}
           </div>

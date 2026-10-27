@@ -211,7 +211,7 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
             </button>
             <button
               type="submit"
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || (item.type === "style" && description.length > 70)}
               className="flex items-center gap-2 rounded-xl bg-[#FB7C20] px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E86B12] transition-colors disabled:opacity-50"
             >
               {updateMutation.isPending ? (

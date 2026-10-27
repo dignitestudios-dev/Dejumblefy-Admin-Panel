@@ -37,7 +37,7 @@ const NAV_ITEMS = [
     icon: Users,
   },
   {
-    name: "Amazon Products",
+    name: "Products",
     href: "/dashboard/products",
     icon: ShoppingBag,
   },

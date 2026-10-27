@@ -112,7 +112,7 @@ export default function ReportsManagement() {
           <UsersAnalyticsCard data={data.users} />
 
           {/* Affiliate Outbound Clicks */}
-          {/* <AffiliateClicksCard data={data.clicks} /> */}
+          <AffiliateClicksCard data={data.clicks} />
         </div>
       ) : null}
     </div>

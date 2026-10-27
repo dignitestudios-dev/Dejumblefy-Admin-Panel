@@ -227,15 +227,15 @@ const targetIndex = Math.min(pasteData.length, 3);
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter Email"
+                placeholder="Enter Admin Email"
                 required
-                disabled
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20]"
+                disabled={isLoading}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 transition-colors focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] disabled:bg-slate-50 disabled:text-slate-500"
               />
             </div>
           </div>
 
-          {/* 6 OTP Boxes */}
+          {/* 4 OTP Boxes */}
           <div>
           <div className="mb-2 flex items-center justify-between">
   <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">

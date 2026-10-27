@@ -88,11 +88,21 @@ export interface RevenueReportData {
   revenueTimeSeries?: Array<{ date: string; revenue: number }>;
 }
 
+export interface ClickRetailerItem {
+  retailer: string;
+  retailerName: string;
+  clicks: number;
+  uniqueUsers: number;
+  share: number;
+}
+
 export interface ClickProductItem {
   clicks: number;
   productId: string;
   title: string;
-  asin: string;
+  retailer?: string;
+  retailerName?: string;
+  asin?: string;
   uniqueUsers?: number;
   imageUrl?: string | null;
   defaultLink?: string;
@@ -112,20 +122,11 @@ export interface ClickOverTimeItem {
 
 export interface ClicksReportData {
   totalClicks: number;
+  byRetailer?: ClickRetailerItem[];
   byProduct?: ClickProductItem[];
   byCategory?: ClickCategoryItem[];
   overTime?: ClickOverTimeItem[];
-  topProducts?: Array<{
-    _id?: string;
-    productId?: string;
-    asin: string;
-    title: string;
-    clickCount?: number;
-    clicks?: number;
-    defaultLink?: string;
-    imageUrl?: string | null;
-    uniqueUsers?: number;
-  }>;
+  topProducts?: ClickProductItem[];
 }
 
 export interface ReportsResponseData {

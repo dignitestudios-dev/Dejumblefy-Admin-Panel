@@ -38,6 +38,7 @@ export default function ProductsManagement() {
     limit: 10,
     search: "",
     category: "",
+    retailer: undefined,
     isActive: undefined,
     linkStatus: undefined,
   });
@@ -61,6 +62,7 @@ export default function ProductsManagement() {
 
   const { data, isLoading, isError, error, refetch, isFetching } = useProductsQuery(filters);
   const { data: categories = [] } = useLookupsQuery({ type: "category", isActive: true });
+  const { data: retailers = [] } = useLookupsQuery({ type: "retailer" });
 
   const products = data?.data || [];
   const pagination = data?.pagination;
@@ -100,13 +102,13 @@ export default function ProductsManagement() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <span>Amazon Affiliate Products</span>
+            <span>Product Catalog</span>
             <span className="rounded-lg bg-[#000072]/10 px-2.5 py-0.5 text-xs font-semibold text-[#000072]">
               Recommendation Pool
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Manage product recommendations, track Amazon affiliate links, and monitor health.
+            Manage product recommendations across supported retailers, affiliate links, and catalog health.
           </p>
         </div>
 
@@ -227,6 +229,25 @@ export default function ProductsManagement() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Retailer filter */}
+          <select
+            value={filters.retailer || ""}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, retailer: e.target.value || undefined, page: 1 }))
+            }
+            className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 font-medium focus:border-[#FB7C20] focus:outline-none"
+          >
+            <option value="">All Retailers</option>
+            <option value="amazon">Amazon</option>
+            {retailers
+              .filter((r) => r.slug !== "amazon")
+              .map((r) => (
+                <option key={r._id} value={r.slug}>
+                  {r.label}
+                </option>
+              ))}
+          </select>
+
           {/* Category filter */}
           <select
             value={filters.category || ""}
@@ -275,6 +296,7 @@ export default function ProductsManagement() {
       {/* Main product table */}
       <ProductsTable
         products={products}
+        retailers={retailers}
         isLoading={isLoading}
         onInspect={(p) => setInspectProduct(p)}
         onEdit={(p) => setEditProduct(p)}
