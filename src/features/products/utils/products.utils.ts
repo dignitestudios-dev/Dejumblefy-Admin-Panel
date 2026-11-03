@@ -60,7 +60,7 @@ export function validateAmazonUrl(url: string): AmazonUrlValidationResult {
     return {
       isValid: false,
       asin: null,
-      error: "Amazon Product URL is required.",
+      error: "Product URL is required.",
     };
   }
 
@@ -71,7 +71,7 @@ export function validateAmazonUrl(url: string): AmazonUrlValidationResult {
     return {
       isValid: false,
       asin: null,
-      error: "Please enter a valid URL (e.g. https://www.amazon.com/dp/B08N5WRWNW).",
+      error: "Please enter a valid URL (e.g. https://example.com/product).",
     };
   }
 
@@ -91,7 +91,7 @@ export function validateAmazonUrl(url: string): AmazonUrlValidationResult {
     return {
       isValid: false,
       asin: null,
-      error: "Please provide a valid Amazon URL (e.g. amazon.com or amzn.to).",
+      error: "Please provide a valid product URL from a supported retailer.",
     };
   }
 
@@ -105,7 +105,7 @@ export function validateAmazonUrl(url: string): AmazonUrlValidationResult {
     return {
       isValid: false,
       asin: null,
-      error: "Could not find a valid 10-character Amazon ASIN in the URL (e.g. /dp/B08N5WRWNW).",
+      error: "Could not find a valid 10-character product identifier in the URL.",
     };
   }
 
@@ -113,7 +113,7 @@ export function validateAmazonUrl(url: string): AmazonUrlValidationResult {
     return {
       isValid: false,
       asin,
-      error: `Invalid or dead ASIN "${asin}". Please provide a valid, active Amazon product link.`,
+      error: `Invalid or dead ASIN "${asin}". Please provide a valid, active product link.`,
     };
   }
 

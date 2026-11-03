@@ -32,7 +32,7 @@ export default function AffiliateClicksCard({ data }: AffiliateClicksCardProps) 
           <div>
             <h3 className="text-base font-bold text-slate-900">Affiliate Clicks by Retailer</h3>
             <p className="text-xs text-slate-500">
-              Measure outbound user click conversions across retail partners (Amazon, Target, Walmart, etc.)
+              Measure outbound user click conversions across retail partners (Target, Walmart, etc.)
             </p>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function AffiliateClicksCard({ data }: AffiliateClicksCardProps) 
         <div className="flex items-center gap-2">
           <Store className="h-4 w-4 text-[#000072]" />
           <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-            Retail Partner Share Breakdown
+            Retail Partners Share Breakdown
           </h4>
         </div>
 

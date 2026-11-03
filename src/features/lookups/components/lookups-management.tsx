@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useUrlState } from "@/hooks/use-url-state";
 import { useDebounce } from "@/hooks/use-debounce";
-import { LookupType, LookupItem, LookupTabConfig } from "../types/lookups.types";
+import { LookupType, LookupItem, LookupTabConfig, LOOKUP_TYPE_LABELS } from "../types/lookups.types";
 import { useLookupsQuery } from "../api/lookups.queries";
 import LookupsTable from "./lookups-table";
 import CreateLookupModal from "./create-lookup-modal";
@@ -128,7 +128,7 @@ function LookupsManagementInner() {
             className="inline-flex items-center gap-2 rounded-xl bg-[#FB7C20] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#E86B12] transition-all"
           >
             <Plus className="h-4 w-4" />
-            <span>Add {currentTabConfig.label.slice(0, -1)}</span>
+            <span>Add {LOOKUP_TYPE_LABELS[activeTab]}</span>
           </button>
         </div>
       </div>

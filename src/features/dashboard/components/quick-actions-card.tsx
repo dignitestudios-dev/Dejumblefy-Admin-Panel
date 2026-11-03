@@ -33,7 +33,7 @@ const QUICK_ACTIONS: ActionItem[] = [
     iconColor: "text-[#000072]",
   },
   {
-    title: "Amazon Products",
+    title: "Products",
     description: "Inspect ASIN catalogs, links & tags",
     href: "/dashboard/products",
     icon: ShoppingBag,

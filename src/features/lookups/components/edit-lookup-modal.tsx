@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Edit3, AlertCircle, Loader2, Info } from "lucide-react";
-import { LookupItem } from "../types/lookups.types";
+import { LookupItem, LOOKUP_TYPE_LABELS } from "../types/lookups.types";
 import { useUpdateLookupMutation } from "../api/lookups.mutations";
 
 interface EditLookupModalProps {
@@ -69,7 +69,7 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       setErrorMsg(
-        error?.response?.data?.message || error?.message || "Failed to update lookup item."
+        error?.response?.data?.message || error?.message || `Failed to update ${LOOKUP_TYPE_LABELS[item.type].toLowerCase()}.`
       );
     }
   };
@@ -84,9 +84,9 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
               <Edit3 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Edit Lookup</h3>
+              <h3 className="text-base font-semibold text-slate-900">Edit {LOOKUP_TYPE_LABELS[item.type]}</h3>
               <p className="text-xs text-slate-500">
-                Updating <span className="text-slate-800 font-mono font-medium">/{item.slug}</span> ({item.type})
+                Updating <span className="text-slate-800 font-mono font-medium">/{item.slug}</span>
               </p>
             </div>
           </div>

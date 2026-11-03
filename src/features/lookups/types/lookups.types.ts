@@ -1,5 +1,19 @@
 export type LookupType = "category" | "style" | "material" | "retailer";
 
+export const LOOKUP_TYPE_LABELS: Record<LookupType, string> = {
+  category: "Room Category",
+  style: "Design Style",
+  material: "Material",
+  retailer: "Retailer",
+};
+
+export const LOOKUP_LABEL_PLACEHOLDERS: Record<LookupType, string> = {
+  category: "e.g. Living Room, Kitchen",
+  style: "e.g. Japandi, Minimalist",
+  material: "e.g. Walnut Wood, Brass",
+  retailer: "e.g. Target, Wayfair",
+};
+
 export interface LookupItem {
   _id: string;
   type: LookupType;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Sparkles, AlertCircle, Loader2, Info } from "lucide-react";
-import { LookupType } from "../types/lookups.types";
+import { LookupType, LOOKUP_TYPE_LABELS, LOOKUP_LABEL_PLACEHOLDERS } from "../types/lookups.types";
 import { useCreateLookupMutation } from "../api/lookups.mutations";
 
 interface CreateLookupModalProps {
@@ -16,7 +16,8 @@ export default function CreateLookupModal({
   onClose,
   defaultType = "category",
 }: CreateLookupModalProps) {
-  const [type, setType] = useState<LookupType>(defaultType);
+  const type = defaultType;
+  const typeLabel = LOOKUP_TYPE_LABELS[type];
   const [label, setLabel] = useState("");
   const [slug, setSlug] = useState("");
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
@@ -89,7 +90,7 @@ export default function CreateLookupModal({
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       setErrorMsg(
-        error?.response?.data?.message || error?.message || "Failed to create lookup item."
+        error?.response?.data?.message || error?.message || `Failed to create ${typeLabel.toLowerCase()}.`
       );
     }
   };
@@ -104,8 +105,8 @@ export default function CreateLookupModal({
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Create New Lookup</h3>
-              <p className="text-xs text-slate-500">Add options for categories, styles, or materials</p>
+              <h3 className="text-base font-semibold text-slate-900">Add {typeLabel}</h3>
+              <p className="text-xs text-slate-500">Create a new {typeLabel.toLowerCase()} option</p>
             </div>
           </div>
           <button
@@ -116,7 +117,7 @@ export default function CreateLookupModal({
               }
               onClose();
             }}
-            aria-label="Close create lookup dialog"
+            aria-label={`Close add ${typeLabel.toLowerCase()} dialog`}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -132,40 +133,6 @@ export default function CreateLookupModal({
             </div>
           )}
 
-          {/* Type Selector */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Lookup Type <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: "category" as LookupType, label: "Room Category" },
-                { id: "style" as LookupType, label: "Design Style" },
-                { id: "material" as LookupType, label: "Material" },
-                { id: "retailer" as LookupType, label: "Retailer" },
-              ].map((opt) => (
-                <button
-                  type="button"
-                  key={opt.id}
-                  disabled={createMutation.isPending}
-                  onClick={() => {
-                    setType(opt.id);
-                    if (opt.id === "style" && description.length > 70) {
-                      setDescription(description.slice(0, 70));
-                    }
-                  }}
-                  className={`py-2 px-3 text-xs font-semibold rounded-xl border transition-all text-center disabled:opacity-50 ${
-                    type === opt.id
-                      ? "border-[#000072] bg-[#000072] text-white shadow-xs"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Label Input */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -178,7 +145,7 @@ export default function CreateLookupModal({
               type="text"
               maxLength={60}
               disabled={createMutation.isPending}
-              placeholder="e.g. Living Room, Japandi, Walnut Wood"
+              placeholder={LOOKUP_LABEL_PLACEHOLDERS[type]}
               value={label}
               onChange={handleLabelChange}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#FB7C20] focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors disabled:opacity-50"
@@ -219,7 +186,7 @@ export default function CreateLookupModal({
               placeholder={
                 type === "style"
                   ? "Crisp, concise aesthetic guide (max 70 chars for AI engine prompt)..."
-                  : "Detailed description of this category or material..."
+                  : `Description of this ${typeLabel.toLowerCase()}...`
               }
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -269,7 +236,7 @@ export default function CreateLookupModal({
                   <span>Creating...</span>
                 </>
               ) : (
-                <span>Save Lookup Item</span>
+                <span>Save {typeLabel}</span>
               )}
             </button>
           </div>

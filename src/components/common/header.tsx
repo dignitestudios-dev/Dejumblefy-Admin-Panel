@@ -7,7 +7,7 @@ import { useAppSelector } from "@/store";
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard": "System Overview",
   "/dashboard/users": "User Accounts",
-  "/dashboard/products": "Amazon Product Catalog",
+  "/dashboard/products": "Product Catalog",
   "/dashboard/lookups": "Categories, Styles & Materials",
   "/dashboard/token-packs": "In-App Token Packages",
   "/dashboard/notifications": "Push Notifications",

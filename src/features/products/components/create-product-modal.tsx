@@ -117,16 +117,16 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
     const trimmed = productLink.trim();
     if (!trimmed) {
       linkError = isAmazon
-        ? "Amazon product URL is required."
+        ? "Product URL is required."
         : "Affiliate network product link is required.";
     } else if (isAmazon) {
       if (amazonValidation && !amazonValidation.isValid) {
-        linkError = amazonValidation.error || "Please enter a valid Amazon product URL.";
+        linkError = amazonValidation.error || "Please enter a valid product URL.";
       }
     } else {
       const lower = trimmed.toLowerCase();
       if (lower.includes("amazon.com") || lower.includes("amzn.to")) {
-        linkError = "Amazon links must use the Amazon retailer";
+        linkError = "This link belongs to a different retailer. Select the matching retailer.";
       } else {
         try {
           const parsed = new URL(trimmed);
@@ -221,20 +221,20 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
     const trimmedTitle = title.trim();
 
     if (!trimmedLink) {
-      setErrorMsg(isAmazon ? "Please enter an Amazon product URL." : "Please enter an affiliate network product link.");
+      setErrorMsg(isAmazon ? "Please enter a product URL." : "Please enter an affiliate network product link.");
       return;
     }
 
     if (isAmazon) {
       const urlCheck = validateAmazonUrl(trimmedLink);
       if (!urlCheck.isValid) {
-        setErrorMsg(urlCheck.error || "Please enter a valid Amazon Product URL.");
+        setErrorMsg(urlCheck.error || "Please enter a valid product URL.");
         return;
       }
     } else {
       const lower = trimmedLink.toLowerCase();
       if (lower.includes("amazon.com") || lower.includes("amzn.to")) {
-        setErrorMsg("Amazon links must use the Amazon retailer");
+        setErrorMsg("This link belongs to a different retailer. Select the matching retailer.");
         return;
       }
       try {
@@ -333,7 +333,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
           {/* Retailer Selection */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Retailer Partner <span className="text-rose-500">*</span>
+              Retailer Partners <span className="text-rose-500">*</span>
             </label>
             <select
               value={retailer}
@@ -352,7 +352,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             </select>
             <p className="text-[11px] text-slate-500 mt-1">
               {isAmazon
-                ? "Amazon products automatically attach your Amazon Associates tag."
+                ? "Product links are automatically tagged with your affiliate tag."
                 : `Affiliate links for ${selectedRetailerObj.label} are saved exactly as pasted from the affiliate network.`}
             </p>
           </div>
@@ -362,7 +362,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               {isAmazon ? (
                 <>
-                  Amazon Product URL <span className="text-rose-500">*</span>
+                  Product URL <span className="text-rose-500">*</span>
                 </>
               ) : (
                 <>
@@ -377,7 +377,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
               disabled={createMutation.isPending}
               placeholder={
                 isAmazon
-                  ? "https://www.amazon.com/dp/B08N5WRWNW or affiliate link"
+                  ? "https://example.com/product or affiliate link"
                   : `https://goto.${retailer}.com/c/... or affiliate network link`
               }
               value={productLink}
@@ -402,11 +402,11 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-200 font-mono text-[10px] font-bold text-emerald-800">
                   ASIN: {detectedAsin}
                 </span>
-                <span className="text-slate-500 text-[11px]">Valid Amazon identifier format</span>
+                <span className="text-slate-500 text-[11px]">Valid identifier format</span>
               </p>
             ) : isAmazon ? (
               <p className="text-[11px] text-slate-500 mt-1">
-                Backend automatically extracts the ASIN and attaches your Amazon Associate tag.
+                Backend automatically extracts the ASIN and attaches your affiliate tag.
               </p>
             ) : (
               <p className="text-[11px] text-slate-500 mt-1">
@@ -471,7 +471,7 @@ export default function CreateProductModal({ isOpen, onClose }: CreateProductMod
                 type="url"
                 maxLength={500}
                 disabled={createMutation.isPending}
-                placeholder="https://m.media-amazon.com/images/I/..."
+                placeholder="https://example.com/images/product.jpg"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#FB7C20] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors font-mono disabled:opacity-50"
