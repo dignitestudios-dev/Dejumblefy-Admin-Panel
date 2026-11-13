@@ -16,7 +16,7 @@ const STATUS_OPTIONS: Array<{ label: string; value: NonNullable<UsersQueryParams
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
   { label: "Pending", value: "pending" },
-  { label: "Suspended", value: "suspended" },
+  { label: "Banned", value: "suspended" },
 ];
 
 export default function UsersFilterBar({

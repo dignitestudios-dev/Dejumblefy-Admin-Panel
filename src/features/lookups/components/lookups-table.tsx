@@ -163,13 +163,26 @@ export default function LookupsTable({
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => onDelete(item)}
-                        title="Deactivate Lookup"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200 transition-all cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {item.isActive ? (
+                        <button
+                          onClick={() => onDelete(item)}
+                          title="Deactivate Lookup"
+                          aria-label={`Deactivate ${item.label}`}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200 transition-all cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleActive(item)}
+                          disabled={isToggling}
+                          title="Activate Lookup"
+                          aria-label={`Activate ${item.label}`}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-200 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

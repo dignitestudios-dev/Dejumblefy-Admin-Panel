@@ -47,7 +47,13 @@ export default function ReportsFilterBar({
           ).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => onFilterChange({ period: tab.id })}
+              onClick={() => {
+                if (tab.id !== "custom") {
+                  onFilterChange({ period: tab.id, startDate: undefined, endDate: undefined });
+                } else {
+                  onFilterChange({ period: tab.id });
+                }
+              }}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
                 filters.period === tab.id
                   ? "bg-[#000072] text-white shadow-2xs"

@@ -84,6 +84,20 @@ export default function SendNotificationModal({
 
     let segment = undefined;
     if (targetAudience === "segment") {
+      const todayDate = new Date().toISOString().split("T")[0];
+      if (signedUpFrom && signedUpFrom > todayDate) {
+        setErrorMsg("Signed Up From date cannot be in the future.");
+        return;
+      }
+      if (signedUpTo && signedUpTo > todayDate) {
+        setErrorMsg("Signed Up To date cannot be in the future.");
+        return;
+      }
+      if (signedUpFrom && signedUpTo && signedUpFrom > signedUpTo) {
+        setErrorMsg("Start Date (Signed Up From) cannot be later than End Date (Signed Up To).");
+        return;
+      }
+
       segment = {
         ...(hasPurchased !== "all" ? { hasPurchased: hasPurchased === "true" } : {}),
         ...(balanceFilter !== "all" ? { balance: balanceFilter } : {}),
@@ -277,8 +291,24 @@ export default function SendNotificationModal({
                       </label>
                       <input
                         type="date"
+                        max={
+                          signedUpTo && signedUpTo < new Date().toISOString().split("T")[0]
+                            ? signedUpTo
+                            : new Date().toISOString().split("T")[0]
+                        }
                         value={signedUpFrom}
-                        onChange={(e) => setSignedUpFrom(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSignedUpFrom(val);
+                          const todayStr = new Date().toISOString().split("T")[0];
+                          if (val && signedUpTo && val > signedUpTo) {
+                            setErrorMsg("Start Date cannot be later than End Date.");
+                          } else if (val > todayStr) {
+                            setErrorMsg("Signed Up From date cannot be in the future.");
+                          } else {
+                            setErrorMsg(null);
+                          }
+                        }}
                         className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
                       />
                     </div>
@@ -288,8 +318,21 @@ export default function SendNotificationModal({
                       </label>
                       <input
                         type="date"
+                        min={signedUpFrom || undefined}
+                        max={new Date().toISOString().split("T")[0]}
                         value={signedUpTo}
-                        onChange={(e) => setSignedUpTo(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSignedUpTo(val);
+                          const todayStr = new Date().toISOString().split("T")[0];
+                          if (val && signedUpFrom && val < signedUpFrom) {
+                            setErrorMsg("End Date cannot be earlier than Start Date.");
+                          } else if (val > todayStr) {
+                            setErrorMsg("Signed Up To date cannot be in the future.");
+                          } else {
+                            setErrorMsg(null);
+                          }
+                        }}
                         className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 focus:border-[#FB7C20] focus:outline-none"
                       />
                     </div>

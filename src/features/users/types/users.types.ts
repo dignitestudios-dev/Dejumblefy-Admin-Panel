@@ -139,10 +139,33 @@ export interface ToggleBlockPayload {
 
 export interface LedgerItem {
   _id: string;
-  amount: number;
-  type: string;
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  type: "credit" | "debit";
   source: string;
+  transactionType: string;
+  tokens: number;
+  price: number;
   balanceAfter: number;
-  note?: string;
+  package: string | null;
+  description: string;
+  status: string;
   createdAt: string;
+}
+export interface UserLedgerResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tokenBalance: number;
+    transactions: LedgerItem[];
+  };
+  pagination: {
+    itemsPerPage: number;
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }

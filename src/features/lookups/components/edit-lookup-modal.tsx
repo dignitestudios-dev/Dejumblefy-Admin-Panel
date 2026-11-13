@@ -54,6 +54,11 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
       return;
     }
 
+    if (typeof sortOrder === "number" && (sortOrder < 0 || sortOrder > 9999)) {
+      setErrorMsg("Sort order must be between 0 and 9999 (maximum 4 digits).");
+      return;
+    }
+
     try {
       await updateMutation.mutateAsync({
         id: item._id,
@@ -85,8 +90,8 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900">Edit {LOOKUP_TYPE_LABELS[item.type]}</h3>
-              <p className="text-xs text-slate-500">
-                Updating <span className="text-slate-800 font-mono font-medium">/{item.slug}</span>
+              <p className="text-xs text-slate-500 truncate max-w-[340px]">
+                Updating <span className="text-slate-800 font-mono font-medium truncate">/{item.slug}</span>
               </p>
             </div>
           </div>
@@ -108,9 +113,12 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
           )}
 
           {/* Immutable Slug Note */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center justify-between">
-            <span className="text-xs text-slate-600 font-medium">Slug Identifier:</span>
-            <span className="font-mono text-xs text-[#000072] bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-semibold">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center justify-between gap-3 overflow-hidden">
+            <span className="text-xs text-slate-600 font-medium shrink-0">Slug Identifier:</span>
+            <span
+              title={item.slug}
+              className="font-mono text-xs text-[#000072] bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-semibold truncate max-w-[300px] text-right"
+            >
               {item.slug}
             </span>
           </div>
@@ -166,14 +174,23 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
           {/* Sort Order & Active Status */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Sort Order
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Sort Order
+                </label>
+                <span className="text-[11px] text-slate-400">Max 9999</span>
+              </div>
               <input
                 type="number"
                 min={0}
+                max={9999}
                 value={sortOrder}
-                onChange={(e) => setSortOrder(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.length <= 4) {
+                    setSortOrder(val === "" ? 0 : Math.min(Number(val), 9999));
+                  }
+                }}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#FB7C20] focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors"
               />
             </div>

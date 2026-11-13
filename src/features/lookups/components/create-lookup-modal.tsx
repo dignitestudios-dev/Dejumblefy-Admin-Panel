@@ -42,13 +42,14 @@ export default function CreateLookupModal({
           .replace(/[^\w\s-]/g, "")
           .replace(/[\s_-]+/g, "-")
           .replace(/^-+|-+$/g, "")
+          .slice(0, 60)
       );
     }
   };
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsSlugManuallyEdited(true);
-    setSlug(e.target.value.toLowerCase().trim().replace(/[^a-z0-9-]/g, "-"));
+    setSlug(e.target.value.toLowerCase().trim().replace(/[^a-z0-9-]/g, "-").slice(0, 60));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,8 +67,18 @@ export default function CreateLookupModal({
       return;
     }
 
+    if (slug.trim().length > 60) {
+      setErrorMsg("Slug cannot exceed 60 characters.");
+      return;
+    }
+
     if (type === "style" && description.length > 70) {
       setErrorMsg("Style descriptions must be 70 characters or fewer.");
+      return;
+    }
+
+    if (typeof sortOrder === "number" && (sortOrder < 0 || sortOrder > 9999)) {
+      setErrorMsg("Sort order must be between 0 and 9999 (maximum 4 digits).");
       return;
     }
 
@@ -154,11 +165,15 @@ export default function CreateLookupModal({
 
           {/* Slug Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Slug Identifier <span className="text-slate-400 text-[11px] font-normal">(Auto-generated or custom)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Slug Identifier <span className="text-slate-400 text-[11px] font-normal">(Auto-generated or custom)</span>
+              </label>
+              <span className="text-[11px] text-slate-400">{slug.length}/60</span>
+            </div>
             <input
               type="text"
+              maxLength={60}
               placeholder="e.g. living-room"
               value={slug}
               onChange={handleSlugChange}
@@ -202,15 +217,24 @@ export default function CreateLookupModal({
 
           {/* Sort Order */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Sort Order <span className="text-slate-400 text-[11px] font-normal">(Optional, defaults to end)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Sort Order <span className="text-slate-400 text-[11px] font-normal">(Optional, defaults to end)</span>
+              </label>
+              <span className="text-[11px] text-slate-400">Max 9999</span>
+            </div>
             <input
               type="number"
               min={0}
+              max={9999}
               placeholder="0"
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val.length <= 4) {
+                  setSortOrder(val === "" ? "" : Math.min(Number(val), 9999));
+                }
+              }}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#FB7C20] focus:outline-none focus:ring-1 focus:ring-[#FB7C20] transition-colors"
             />
           </div>

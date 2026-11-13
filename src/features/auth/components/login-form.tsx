@@ -66,22 +66,32 @@ export default function LoginForm() {
         password: data.password,
       });
 
-      if (response && response.token) {
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.token);
-        localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(response.admin));
-        document.cookie = `${STORAGE_KEYS.AUTH_TOKEN}=${response.token}; path=/; max-age=86400; SameSite=Lax`;
+      const authToken =
+        response?.token || (response as unknown as { accessToken?: string })?.accessToken;
+      const adminUser =
+        response?.admin || (response as unknown as { user?: typeof response.admin })?.user;
 
-        dispatch(
-          setCredentials({
-            accessToken: response.token,
-            user: response.admin,
-          })
-        );
+      if (authToken) {
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authToken);
+        if (adminUser) {
+          localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(adminUser));
+        }
+        document.cookie = `${STORAGE_KEYS.AUTH_TOKEN}=${authToken}; path=/; max-age=86400; SameSite=Lax`;
 
-        // Check if returnUrl parameter is present
+        if (adminUser) {
+          dispatch(
+            setCredentials({
+              accessToken: authToken,
+              user: adminUser,
+            })
+          );
+        }
+
+        // Check if returnUrl or redirect parameter is present
         const searchParams = new URLSearchParams(window.location.search);
-        const returnUrl = searchParams.get("returnUrl");
-        router.push(returnUrl || DEFAULT_REDIRECT);
+        const destination =
+          searchParams.get("returnUrl") || searchParams.get("redirect") || DEFAULT_REDIRECT;
+        window.location.href = destination;
       } else {
         setErrorMessage("Unexpected login response. Please check your credentials.");
       }

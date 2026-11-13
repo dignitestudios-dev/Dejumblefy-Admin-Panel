@@ -21,15 +21,29 @@ export const fetchUserById = async (id: string): Promise<UserDetailData> => {
   return response.data.data;
 };
 
+
 export const fetchUserLedger = async (
   id: string,
   params?: { page?: number; limit?: number }
-): Promise<{ data: LedgerItem[]; pagination: Record<string, unknown> }> => {
+): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    tokenBalance: number;
+    transactions: LedgerItem[];
+  };
+  pagination: Record<string, unknown>;
+}> => {
   const response = await axiosInstance.get<{
+    success: boolean;
     message: string;
-    data: LedgerItem[];
+    data: {
+      tokenBalance: number;
+      transactions: LedgerItem[];
+    };
     pagination: Record<string, unknown>;
   }>(`/admin/users/${id}/ledger`, { params });
+
   return response.data;
 };
 

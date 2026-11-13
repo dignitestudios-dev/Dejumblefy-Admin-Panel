@@ -17,9 +17,68 @@ export default function GrowthChartCard({ userStats, revenue }: GrowthChartCardP
   const userGrowth = userStats?.growth ?? [];
   const revenueGrowth = revenue?.growth ?? [];
 
-  // If userGrowth has points, use them; if < 2 points, ensure reasonable display
-  const userPoints = userGrowth.length > 0 ? userGrowth : [];
-  const revenuePoints = revenueGrowth.length > 0 ? revenueGrowth : [];
+  // Group and deduplicate data points by date to prevent repeated entries (e.g. on "Today" filter)
+  const groupUserPoints = (data: Array<{ date: string; count: number }>) => {
+    if (!data || data.length === 0) return [];
+    const map = new Map<string, { date: string; counts: number[] }>();
+    data.forEach((item) => {
+      let key = item.date;
+      try {
+        const d = new Date(item.date);
+        if (!isNaN(d.getTime())) {
+          key = d.toISOString().split("T")[0];
+        }
+      } catch {}
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, { date: item.date, counts: [item.count] });
+      } else {
+        existing.counts.push(item.count);
+      }
+    });
+
+    return Array.from(map.values()).map(({ date, counts }) => {
+      const allIdentical = counts.every((c) => c === counts[0]);
+      return {
+        date,
+        count: allIdentical ? counts[0] : counts.reduce((acc, c) => acc + c, 0),
+      };
+    });
+  };
+
+  const groupRevenuePoints = (data: Array<{ date: string; purchases: number; revenue: number }>) => {
+    if (!data || data.length === 0) return [];
+    const map = new Map<string, { date: string; items: Array<{ purchases: number; revenue: number }> }>();
+    data.forEach((item) => {
+      let key = item.date;
+      try {
+        const d = new Date(item.date);
+        if (!isNaN(d.getTime())) {
+          key = d.toISOString().split("T")[0];
+        }
+      } catch {}
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, { date: item.date, items: [{ purchases: item.purchases, revenue: item.revenue }] });
+      } else {
+        existing.items.push({ purchases: item.purchases, revenue: item.revenue });
+      }
+    });
+
+    return Array.from(map.values()).map(({ date, items }) => {
+      const allIdentical = items.every(
+        (it) => it.purchases === items[0].purchases && it.revenue === items[0].revenue
+      );
+      return {
+        date,
+        purchases: allIdentical ? items[0].purchases : items.reduce((acc, it) => acc + it.purchases, 0),
+        revenue: allIdentical ? items[0].revenue : items.reduce((acc, it) => acc + it.revenue, 0),
+      };
+    });
+  };
+
+  const userPoints = groupUserPoints(userGrowth);
+  const revenuePoints = groupRevenuePoints(revenueGrowth);
 
   const maxUserCount = Math.max(...userPoints.map((p) => p.count), 1);
   const totalUserCount = userPoints.reduce((acc, p) => acc + (p.count || 0), 0);

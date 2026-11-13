@@ -26,7 +26,14 @@ export default function ReportsManagement() {
   const { data, isLoading, isError, error, refetch, isFetching } = useReportsQuery(filters);
 
   const handleFilterChange = (updated: Partial<ReportsQueryParams>) => {
-    setFilters((prev) => ({ ...prev, ...updated }));
+    setFilters((prev) => {
+      const next = { ...prev, ...updated };
+      if (updated.period && updated.period !== "custom") {
+        delete next.startDate;
+        delete next.endDate;
+      }
+      return next;
+    });
   };
 
   return (

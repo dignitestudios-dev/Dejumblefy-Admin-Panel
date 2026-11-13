@@ -20,7 +20,7 @@ export const fetchReports = async (
 
   if (params?.granularity) queryParams.granularity = params.granularity;
 
-  if (hasBothDates) {
+  if (isCustom && hasBothDates) {
     queryParams.startDate = params!.startDate!.trim();
     queryParams.endDate = params!.endDate!.trim();
   }
@@ -49,7 +49,7 @@ export const exportReportCsv = async (params: ReportsQueryParams): Promise<void>
 
   if (params.granularity) queryParams.granularity = params.granularity;
 
-  if (hasBothDates) {
+  if (isCustom && hasBothDates) {
     queryParams.startDate = params.startDate!.trim();
     queryParams.endDate = params.endDate!.trim();
   }

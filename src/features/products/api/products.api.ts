@@ -8,6 +8,7 @@ import {
   AISuggestTagsPayload,
   AISuggestTagsResponse,
   ImportCsvResponse,
+  ProductStatsResponse,
 } from "../types/products.types";
 
 export const fetchProducts = async (
@@ -125,4 +126,13 @@ export const downloadCsvTemplate = async (): Promise<void> => {
   link.click();
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
+};
+
+
+export const fetchProductStats = async (): Promise<ProductStatsResponse> => {
+  const response = await axiosInstance.get<ProductStatsResponse>(
+    "/admin/products/stats"
+  );
+
+  return response.data;
 };

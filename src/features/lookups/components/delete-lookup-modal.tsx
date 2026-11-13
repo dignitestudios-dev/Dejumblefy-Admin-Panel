@@ -60,9 +60,12 @@ export default function DeleteLookupModal({ item, isOpen, onClose }: DeleteLooku
             </div>
           )}
 
-          <p className="text-sm text-slate-700">
+          <p className="text-sm text-slate-700 break-words [overflow-wrap:anywhere]">
             Are you sure you want to deactivate{" "}
-            <span className="font-semibold text-slate-900">"{item.label}"</span>?
+            <span className="font-semibold text-slate-900 break-words [overflow-wrap:anywhere]">
+              "{item.label}"
+            </span>
+            ?
           </p>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">

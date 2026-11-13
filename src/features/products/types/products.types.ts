@@ -104,3 +104,18 @@ export interface ImportCsvResponse {
   failed?: number;
   errors?: Array<{ row: number; error: string; data?: Record<string, unknown> }>;
 }
+
+
+export interface ProductStatsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    total: number;
+    active: number;
+    live: number;
+    broken: number;
+    healthy: number;
+    unchecked: number;
+    inactive: number;
+  };
+}

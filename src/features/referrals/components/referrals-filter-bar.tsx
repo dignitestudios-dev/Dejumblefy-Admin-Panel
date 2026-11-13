@@ -74,7 +74,6 @@ export default function ReferralsFilterBar({
           >
             <option value="all">All Reward Statuses</option>
             <option value="earned">Earned & Credited</option>
-            <option value="pending">Pending Validation</option>
           </select>
         </div>
 

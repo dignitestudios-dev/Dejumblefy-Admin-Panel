@@ -22,7 +22,7 @@ import {
   ProductsQueryParams,
   LinkStatus,
 } from "../types/products.types";
-import { useProductsQuery } from "../api/products.queries";
+import { useProductsQuery, useProductStatsQuery } from "../api/products.queries";
 import { downloadCsvTemplate } from "../api/products.api";
 import { useLookupsQuery } from "@/features/lookups/api/lookups.queries";
 import ProductsTable from "./products-table";
@@ -95,6 +95,12 @@ export default function ProductsManagement() {
       setIsDownloadingTemplate(false);
     }
   };
+  const {
+    data: productStatsData,
+    isLoading: isStatsLoading,
+    error: statsError,
+  } = useProductStatsQuery();
+
 
   return (
     <div className="space-y-6">
@@ -162,7 +168,7 @@ export default function ProductsManagement() {
             <ShoppingBag className="h-4 w-4 text-[#000072]" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-900">
-            {pagination?.totalItems ?? products.length}
+           {productStatsData?.data?.total ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-500">Affiliate items registered</div>
         </div>
@@ -173,7 +179,7 @@ export default function ProductsManagement() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="mt-2 text-2xl font-bold text-emerald-600">
-            {products.filter((p) => p.isActive).length}
+            {productStatsData?.data?.active ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-500">Live for AI recommendation</div>
         </div>
@@ -184,7 +190,7 @@ export default function ProductsManagement() {
             <AlertTriangle className="h-4 w-4 text-rose-500" />
           </div>
           <div className="mt-2 text-2xl font-bold text-rose-600">
-            {products.filter((p) => p.linkStatus === "broken").length}
+            {productStatsData?.data?.broken ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-500">Requiring link replacement</div>
         </div>
@@ -195,7 +201,7 @@ export default function ProductsManagement() {
             <CheckCircle2 className="h-4 w-4 text-[#FB7C20]" />
           </div>
           <div className="mt-2 text-2xl font-bold text-slate-900">
-            {products.filter((p) => p.linkStatus === "ok").length}
+          {productStatsData?.data?.healthy ?? 0}
           </div>
           <div className="mt-1 text-[11px] text-slate-500">Verified links</div>
         </div>
@@ -280,8 +286,8 @@ export default function ProductsManagement() {
               filters.isActive === true
                 ? "active"
                 : filters.isActive === false
-                ? "inactive"
-                : "all"
+                  ? "inactive"
+                  : "all"
             }
             onChange={(e) => handleStatusChange(e.target.value as "all" | "active" | "inactive")}
             className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs text-slate-700 font-medium focus:border-[#FB7C20] focus:outline-none"
