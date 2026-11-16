@@ -101,7 +101,7 @@ function LookupsManagementInner() {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
+      
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
