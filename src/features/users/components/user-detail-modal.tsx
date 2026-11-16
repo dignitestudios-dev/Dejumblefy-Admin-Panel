@@ -27,7 +27,7 @@ interface UserDetailModalProps {
 
 export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "ledger" | "referrals">("overview");
-
+  const [showBanConfirm, setShowBanConfirm] = useState(false);
   const { data: user, isLoading: isUserLoading } = useUserDetailQuery(userId);
   const { data: ledgerData, isLoading: isLedgerLoading } = useUserLedgerQuery(userId, {
     limit: 20,
@@ -45,10 +45,16 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
   const handleToggleBlock = async () => {
     if (!user) return;
     const newToggleState = !user.isDeactivatedByAdmin;
-    await toggleBlockMutation.mutateAsync({
-      id: user._id,
-      payload: { toggle: newToggleState },
-    });
+    try {
+      await toggleBlockMutation.mutateAsync({
+        id: user._id,
+        payload: { toggle: newToggleState },
+      });
+
+      setShowBanConfirm(false);
+    } catch (error) {
+      // Error handled by mutation
+    }
   };
 
   return (
@@ -371,7 +377,7 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
             {user && (
               <button
                 type="button"
-                onClick={handleToggleBlock}
+                onClick={() => setShowBanConfirm(true)}
                 disabled={toggleBlockMutation.isPending}
                 className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${isSuspended
                   ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
@@ -397,6 +403,77 @@ export default function UserDetailModal({ userId, isOpen, onClose }: UserDetailM
             Close
           </button>
         </div>
+        {/* Ban / Unban Confirmation Dialog */}
+        {showBanConfirm && user && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-6 space-y-4">
+
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl border ${isSuspended
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                    : "bg-rose-50 text-rose-600 border-rose-100"
+                    }`}
+                >
+                  {isSuspended ? (
+                    <ShieldCheck className="h-5 w-5" />
+                  ) : (
+                    <ShieldAlert className="h-5 w-5" />
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {isSuspended ? "Confirm Unban User" : "Confirm Ban User"}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {isSuspended
+                      ? "Restore account access"
+                      : "Restrict account access"}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600">
+                Are you sure you want to {isSuspended ? "unban" : "ban"} user{" "}
+                <span className="font-bold text-slate-900">
+                  "{user.name || user.email}"
+                </span>
+                ?
+                {isSuspended
+                  ? " This will restore the user's access to the application."
+                  : " This will deactivate the user's account and block their access to the application."}
+              </p>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowBanConfirm(false)}
+                  disabled={toggleBlockMutation.isPending}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleToggleBlock}
+                  disabled={toggleBlockMutation.isPending}
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 ${isSuspended
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-rose-600 hover:bg-rose-700"
+                    }`}
+                >
+                  {toggleBlockMutation.isPending && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
+
+                  {isSuspended ? "Confirm Unban" : "Confirm Ban"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

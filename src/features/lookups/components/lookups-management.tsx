@@ -22,6 +22,7 @@ import LookupsTable from "./lookups-table";
 import CreateLookupModal from "./create-lookup-modal";
 import EditLookupModal from "./edit-lookup-modal";
 import DeleteLookupModal from "./delete-lookup-modal";
+import ActivateLookupModal from "./activate-lookup-modal";
 
 const TABS: LookupTabConfig[] = [
   {
@@ -68,6 +69,7 @@ function LookupsManagementInner() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<LookupItem | null>(null);
   const [deletingItem, setDeletingItem] = useState<LookupItem | null>(null);
+  const [activatingItem, setActivatingItem] = useState<LookupItem | null>(null);
 
   const { data: items = [], isLoading, isError, error, refetch, isFetching } = useLookupsQuery({
     type: activeTab,
@@ -277,6 +279,7 @@ function LookupsManagementInner() {
         onAddNew={() => setIsCreateOpen(true)}
         onEdit={(item) => setEditingItem(item)}
         onDelete={(item) => setDeletingItem(item)}
+        onActivate={(item) => setActivatingItem(item)}
       />
 
       {/* Modals */}
@@ -296,6 +299,12 @@ function LookupsManagementInner() {
         item={deletingItem}
         isOpen={Boolean(deletingItem)}
         onClose={() => setDeletingItem(null)}
+      />
+
+      <ActivateLookupModal
+        item={activatingItem}
+        isOpen={Boolean(activatingItem)}
+        onClose={() => setActivatingItem(null)}
       />
     </div>
   );

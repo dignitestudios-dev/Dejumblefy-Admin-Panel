@@ -61,7 +61,7 @@ export default function ReferralsFilterBar({
         </div>
 
         {/* Status Filter */}
-        <div>
+        {/* <div>
           <select
             value={filters.status || "all"}
             onChange={(e) =>
@@ -75,7 +75,7 @@ export default function ReferralsFilterBar({
             <option value="all">All Reward Statuses</option>
             <option value="earned">Earned & Credited</option>
           </select>
-        </div>
+        </div> */}
 
         {/* Start Date */}
         <div className="relative">

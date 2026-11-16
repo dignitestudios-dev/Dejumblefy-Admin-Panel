@@ -40,8 +40,8 @@ export default function DeleteLookupModal({ item, isOpen, onClose }: DeleteLooku
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Deactivate Lookup</h3>
-              <p className="text-xs text-slate-500">Soft delete item from customer visibility</p>
+              <h3 className="text-base font-semibold text-slate-900">Deactivate </h3>
+              {/* <p className="text-xs text-slate-500">Soft delete item from customer visibility</p> */}
             </div>
           </div>
           <button
@@ -68,13 +68,13 @@ export default function DeleteLookupModal({ item, isOpen, onClose }: DeleteLooku
             ?
           </p>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
+          {/* <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1">
             <p className="font-semibold text-amber-900">Safety Notice:</p>
             <p>
               This is a safe soft-delete. It hides the option from mobile app category/style pickers
               while preserving historical design project references that use this slug.
             </p>
-          </div>
+          </div> */}
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
@@ -97,7 +97,7 @@ export default function DeleteLookupModal({ item, isOpen, onClose }: DeleteLooku
                   <span>Deactivating...</span>
                 </>
               ) : (
-                <span>Deactivate Lookup</span>
+                <span>Deactivate </span>
               )}
             </button>
           </div>

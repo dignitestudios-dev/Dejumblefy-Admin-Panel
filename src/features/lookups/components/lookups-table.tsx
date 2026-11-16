@@ -18,6 +18,7 @@ interface LookupsTableProps {
   isLoading: boolean;
   onEdit: (item: LookupItem) => void;
   onDelete: (item: LookupItem) => void;
+  onActivate: (item: LookupItem) => void;
   onAddNew: () => void;
 }
 
@@ -27,6 +28,7 @@ export default function LookupsTable({
   isLoading,
   onEdit,
   onDelete,
+  onActivate,
   onAddNew,
 }: LookupsTableProps) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -133,18 +135,15 @@ export default function LookupsTable({
                   {/* Active Status Badge & Quick Toggle */}
                   <td className="py-3 px-4 text-center">
                     <button
-                      onClick={() => handleToggleActive(item)}
-                      disabled={isToggling}
+                      onClick={() => (item.isActive ? onDelete(item) : onActivate(item))}
                       title={item.isActive ? "Click to deactivate" : "Click to activate"}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition-all ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition-all cursor-pointer ${
                         item.isActive
                           ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                           : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
-                      {isToggling ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : item.isActive ? (
+                      {item.isActive ? (
                         <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                       ) : (
                         <XCircle className="h-3 w-3 text-slate-500" />
@@ -174,11 +173,10 @@ export default function LookupsTable({
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleToggleActive(item)}
-                          disabled={isToggling}
+                          onClick={() => onActivate(item)}
                           title="Activate Lookup"
                           aria-label={`Activate ${item.label}`}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-200 transition-all cursor-pointer disabled:opacity-50"
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-200 transition-all cursor-pointer"
                         >
                           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         </button>

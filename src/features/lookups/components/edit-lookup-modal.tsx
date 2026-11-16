@@ -90,8 +90,11 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900">Edit {LOOKUP_TYPE_LABELS[item.type]}</h3>
-              <p className="text-xs text-slate-500 truncate max-w-[340px]">
-                Updating <span className="text-slate-800 font-mono font-medium truncate">/{item.slug}</span>
+              <p className="text-xs text-slate-500 max-w-[340px] break-all">
+                Updating{" "}
+                <span className="text-slate-800 font-mono font-medium break-all">
+                  /{item.slug}
+                </span>
               </p>
             </div>
           </div>
@@ -113,14 +116,19 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
           )}
 
           {/* Immutable Slug Note */}
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center justify-between gap-3 overflow-hidden">
-            <span className="text-xs text-slate-600 font-medium shrink-0">Slug Identifier:</span>
-            <span
-              title={item.slug}
-              className="font-mono text-xs text-[#000072] bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-semibold truncate max-w-[300px] text-right"
-            >
-              {item.slug}
+          <div className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col gap-2">
+            <span className="text-xs text-slate-600 font-medium">
+              Slug Identifier:
             </span>
+
+            <div className="w-full min-w-0 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+              <p
+                title={item.slug}
+                className="w-full min-w-0  text-xs font-semibold text-[#000072] whitespace-normal break-words [overflow-wrap:anywhere]"
+              >
+                {item.slug}
+              </p>
+            </div>
           </div>
 
           {/* Label Input */}
@@ -148,9 +156,8 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
                 Description {item.type === "style" && <span className="text-amber-600 font-normal">(Max 70 chars)</span>}
               </label>
               <span
-                className={`text-[11px] ${
-                  description.length >= maxDescLength ? "text-rose-500 font-bold" : "text-slate-400"
-                }`}
+                className={`text-[11px] ${description.length >= maxDescLength ? "text-rose-500 font-bold" : "text-slate-400"
+                  }`}
               >
                 {description.length}/{maxDescLength}
               </span>
@@ -202,11 +209,10 @@ export default function EditLookupModal({ item, isOpen, onClose }: EditLookupMod
               <button
                 type="button"
                 onClick={() => setIsActive(!isActive)}
-                className={`w-full py-2 px-3 text-xs font-semibold rounded-xl border transition-all flex items-center justify-center gap-2 ${
-                  isActive
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-slate-200 bg-slate-100 text-slate-600"
-                }`}
+                className={`w-full py-2 px-3 text-xs font-semibold rounded-xl border transition-all flex items-center justify-center gap-2 ${isActive
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-slate-200 bg-slate-100 text-slate-600"
+                  }`}
               >
                 <span
                   className={`h-2 w-2 rounded-full ${isActive ? "bg-emerald-500" : "bg-slate-400"}`}
