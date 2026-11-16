@@ -40,7 +40,7 @@ export default function StatCard({
           >
             {trend.value}
           </span>
-          <span className="text-slate-400">vs previous period</span>
+          {/* <span className="text-slate-400">vs previous period</span> */}
         </div>
       )}
     </div>
